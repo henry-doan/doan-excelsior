@@ -1,5 +1,16 @@
 import { useState } from 'react'
+import { useWords } from '../hooks/useSettings.js'
 import Icon from './Icon.jsx'
+
+// Heraldic tinctures, given to the banners in turn: vert, or, gules, azure, purpure.
+// Each has a text color that reads well on it.
+const BANNER_COLORS = [
+  { banner: '#1e7a46', ink: '#ffffff' },
+  { banner: '#d4ac2b', ink: '#2b2105' },
+  { banner: '#a8323a', ink: '#ffffff' },
+  { banner: '#2f5f9e', ink: '#ffffff' },
+  { banner: '#6b3f8f', ink: '#ffffff' },
+]
 
 const RenameInput = ({ initialName, onSubmit, onCancel }) => {
   const [name, setName] = useState(initialName)
@@ -21,9 +32,10 @@ const RenameInput = ({ initialName, onSubmit, onCancel }) => {
   )
 }
 
-/** Sheet tabs: click to switch, double-click to rename. */
+/** Sheet tabs, shaped as hanging banners: click to switch, double-click to rename. */
 const SheetTabs = ({ sheets, activeSheet, onSelect, onAdd, onRename, onRemove }) => {
   const [renaming, setRenaming] = useState(null)
+  const words = useWords()
 
   const submitRename = (sheetId, name) => {
     onRename(sheetId, name)
@@ -32,14 +44,21 @@ const SheetTabs = ({ sheets, activeSheet, onSelect, onAdd, onRename, onRemove })
 
   return (
     <nav className="sheet-tabs" aria-label="Sheets">
-      <button type="button" className="sheet-add" aria-label="Add sheet" title="Add sheet" onClick={onAdd}>
+      <button type="button" className="sheet-add" aria-label={words.addSheet} title={words.addSheet} onClick={onAdd}>
         <Icon name="plus" size={16} />
       </button>
       <div className="sheet-list" role="tablist">
-        {sheets.map(({ id, name }) => {
+        {sheets.map(({ id, name }, index) => {
           const isActive = id === activeSheet
           return (
-            <div key={id} className={`sheet-tab ${isActive ? 'is-active' : ''}`}>
+            <div
+              key={id}
+              className={`sheet-tab ${isActive ? 'is-active' : ''}`}
+              style={{
+                '--banner': BANNER_COLORS[index % BANNER_COLORS.length].banner,
+                '--banner-ink': BANNER_COLORS[index % BANNER_COLORS.length].ink,
+              }}
+            >
               {renaming === id ? (
                 <RenameInput
                   initialName={name}

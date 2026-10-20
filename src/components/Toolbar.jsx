@@ -1,7 +1,9 @@
+import { useWords } from '../hooks/useSettings.js'
 import { ACCEPTED_FILE_TYPES } from '../lib/fileIO.js'
 import Brand from './Brand.jsx'
 import FunctionMenu from './FunctionMenu.jsx'
 import Icon from './Icon.jsx'
+import SettingsToggles from './SettingsToggles.jsx'
 import ThemePicker from './ThemePicker.jsx'
 
 const ToolButton = ({ icon, label, shortcut, ...props }) => (
@@ -37,6 +39,8 @@ const Toolbar = ({
   onInsertFunction,
   onBrowseFunctions,
 }) => {
+  const words = useWords()
+
   const handleFileChange = (event) => {
     const [file] = event.target.files
     event.target.value = ''
@@ -49,15 +53,15 @@ const Toolbar = ({
         <div className="brand">
           <Brand />
           <span className="file-name" title={fileName}>
-            {isOpening ? 'Opening…' : fileName}
+            {isOpening ? words.opening : fileName}
           </span>
         </div>
 
         <div className="tool-group file-actions" role="group" aria-label="File">
-          <ToolButton icon="new" label="New" onClick={onNew} />
-          <label className="tool-button" title="Open an Excel, ODS or CSV file">
+          <ToolButton icon="new" label={words.new} onClick={onNew} />
+          <label className="tool-button" title={words.openTitle}>
             <Icon name="open" />
-            <span className="tool-label">Open</span>
+            <span className="tool-label">{words.open}</span>
             <input
               type="file"
               className="visually-hidden"
@@ -66,22 +70,22 @@ const Toolbar = ({
               onChange={handleFileChange}
             />
           </label>
-          <ToolButton icon="download" label="Download .xlsx" onClick={() => onDownload('xlsx')} />
-          <ToolButton icon="download" label="Download .csv" onClick={() => onDownload('csv')} />
+          <ToolButton icon="download" label={words.downloadXlsx} onClick={() => onDownload('xlsx')} />
+          <ToolButton icon="download" label={words.downloadCsv} onClick={() => onDownload('csv')} />
         </div>
       </div>
 
       <div className="tool-groups" role="toolbar" aria-label="Editing">
         <div className="tool-group">
-          <ToolButton icon="undo" label="Undo" shortcut="Ctrl+Z" disabled={!canUndo} onClick={onUndo} />
-          <ToolButton icon="redo" label="Redo" shortcut="Ctrl+Y" disabled={!canRedo} onClick={onRedo} />
+          <ToolButton icon="undo" label={words.undo} shortcut="Ctrl+Z" disabled={!canUndo} onClick={onUndo} />
+          <ToolButton icon="redo" label={words.redo} shortcut="Ctrl+Y" disabled={!canRedo} onClick={onRedo} />
         </div>
 
         <div className="tool-group">
-          <ToolButton icon="rowAdd" label="Insert row" onClick={onInsertRow} />
-          <ToolButton icon="rowRemove" label="Delete rows" onClick={onDeleteRows} />
-          <ToolButton icon="colAdd" label="Insert column" onClick={onInsertColumn} />
-          <ToolButton icon="colRemove" label="Delete columns" onClick={onDeleteColumns} />
+          <ToolButton icon="rowAdd" label={words.insertRow} onClick={onInsertRow} />
+          <ToolButton icon="rowRemove" label={words.deleteRows} onClick={onDeleteRows} />
+          <ToolButton icon="colAdd" label={words.insertColumn} onClick={onInsertColumn} />
+          <ToolButton icon="colRemove" label={words.deleteColumns} onClick={onDeleteColumns} />
         </div>
 
         <div className="tool-group">
@@ -89,10 +93,11 @@ const Toolbar = ({
         </div>
 
         <div className="tool-group toolbar-end">
+          <SettingsToggles />
           <ThemePicker />
           <ToolButton
             icon="keyboard"
-            label="Shortcuts"
+            label={words.shortcuts}
             aria-pressed={shortcutsOpen}
             onClick={onToggleShortcuts}
           />

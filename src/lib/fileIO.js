@@ -55,13 +55,20 @@ const readSheet = (worksheet) => {
   return { matrix, formats, widths }
 }
 
+/** Waits until the browser has painted, so progress shown before heavy work actually appears. */
+export const nextPaint = () =>
+  new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)))
+
 /**
  * Reads an uploaded file into plain data:
  * `{ sheets: [{ name, matrix, formats, widths }] }` where formats maps "row:col" to an
  * Excel number format and widths maps a column index to its width in pixels.
+ * `onProgress(stage, fraction)` is awaited before each step ("read", then "parse").
  */
-export const readWorkbookFile = async (file) => {
+export const readWorkbookFile = async (file, onProgress = async () => {}) => {
+  await onProgress('read', 0.1)
   const buffer = await file.arrayBuffer()
+  await onProgress('parse', 0.35)
   const workbook = XLSX.read(buffer, {
     cellFormula: true,
     cellNF: true,

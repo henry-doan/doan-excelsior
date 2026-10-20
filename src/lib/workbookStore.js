@@ -1,6 +1,7 @@
 import { HyperFormula } from 'hyperformula'
 import * as XLSX from 'xlsx'
 import { clampWidth, shiftWidths } from './columns.js'
+import './excelsiorFunction.js'
 import { detectedFormat, parseInput, toEditText } from './format.js'
 
 export const MAX_ROWS = 100_000
@@ -226,15 +227,16 @@ export const createWorkbookStore = () => {
     notify()
   }
 
-  const nextSheetName = () => {
+  /** "Sheet2", or with another prefix such as "Banner " → "Banner 2". */
+  const nextSheetName = (prefix) => {
     const names = new Set(engine.getSheetNames().map((name) => name.toLowerCase()))
     let index = names.size + 1
-    while (names.has(`sheet${index}`)) index += 1
-    return `Sheet${index}`
+    while (names.has(`${prefix}${index}`.toLowerCase())) index += 1
+    return `${prefix}${index}`
   }
 
-  const addSheet = () => {
-    const name = mutate(() => engine.addSheet(nextSheetName()))
+  const addSheet = (prefix = 'Sheet') => {
+    const name = mutate(() => engine.addSheet(nextSheetName(prefix)))
     const sheet = engine.getSheetId(name)
     formats = new Map(formats).set(sheet, new Map())
     return sheet

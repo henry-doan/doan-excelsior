@@ -1,4 +1,5 @@
 import { useDeferredValue } from 'react'
+import { useWords } from '../hooks/useSettings.js'
 import { useWorkbook } from '../hooks/useWorkbook.js'
 import { normalizeRange, rangeSize } from '../lib/address.js'
 
@@ -32,6 +33,7 @@ const summarize = (store, sheet, selection) => {
  */
 const StatusBar = ({ sheet, selection }) => {
   const store = useWorkbook()
+  const words = useWords()
   const deferredSelection = useDeferredValue(selection)
   const size = rangeSize(deferredSelection)
 
@@ -45,11 +47,11 @@ const StatusBar = ({ sheet, selection }) => {
     <div className="status-bar" aria-live="polite">
       {numbers > 0 && (
         <>
-          <span>Sum <strong>{numberFormatter.format(sum)}</strong></span>
-          <span>Average <strong>{numberFormatter.format(sum / numbers)}</strong></span>
+          <span>{words.sum} <strong>{numberFormatter.format(sum)}</strong></span>
+          <span>{words.average} <strong>{numberFormatter.format(sum / numbers)}</strong></span>
         </>
       )}
-      <span>Count <strong>{filled}</strong></span>
+      <span>{words.count} <strong>{filled}</strong></span>
     </div>
   )
 }

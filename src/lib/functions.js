@@ -1,4 +1,5 @@
 import { HyperFormula } from 'hyperformula'
+import './excelsiorFunction.js'
 
 /**
  * The catalog behind function autocomplete and the Functions menu.
@@ -102,6 +103,8 @@ const DOCS = {
   ISNUMBER: ['Information', 'ISNUMBER(value)', 'Returns TRUE if a value is a number.'],
   ISTEXT: ['Information', 'ISTEXT(value)', 'Returns TRUE if a value is text.'],
   ISERROR: ['Information', 'ISERROR(value)', 'Returns TRUE if a value is any error.'],
+  // Ours
+  EXCELSIOR: ['Knightly', 'EXCELSIOR()', 'Returns a random knightly motto. Only works in Doan Excelsior.'],
 }
 
 /** Categories for the functions without their own description, by name or prefix. */
@@ -143,6 +146,7 @@ export const CATEGORIES = [
   'Information',
   'Database',
   'Engineering',
+  'Knightly',
 ]
 
 /** Every function the engine supports, skipping HyperFormula's internal operator functions. */

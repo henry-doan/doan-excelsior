@@ -1,9 +1,11 @@
 import { Activity, useEffect, useRef, useState } from 'react'
+import { useWords } from '../hooks/useSettings.js'
 import { useWorkbook } from '../hooks/useWorkbook.js'
 import { cellLabel, clamp, normalizeRange, rangeSize } from '../lib/address.js'
 import { downloadWorkbook, withExtension } from '../lib/fileIO.js'
 import { formatValue } from '../lib/format.js'
 import { closeParens } from '../lib/functions.js'
+import { playSound } from '../lib/sounds.js'
 import { fromTsv, toTsv } from '../lib/tsv.js'
 import { MAX_COLUMNS, MAX_ROWS } from '../lib/workbookStore.js'
 import FormulaBar from './FormulaBar.jsx'
@@ -29,6 +31,7 @@ const singleCell = (row, col, reveal = false) => ({ row, col, endRow: row, endCo
  */
 const WorkbookView = ({ onOpenFile, isOpening }) => {
   const store = useWorkbook()
+  const words = useWords()
   const gridRef = useRef(null)
   const clipboardText = useRef(null)
   const sheetIds = store.getSheetIds()
@@ -127,7 +130,8 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
 
   const commitEditing = (rowDelta = 0, colDelta = 0) => {
     if (!editing) return
-    attempt(() => store.setCell(sheet, editing.row, editing.col, closeParens(editing.value)))
+    const saved = attempt(() => store.setCell(sheet, editing.row, editing.col, closeParens(editing.value)))
+    if (saved && editing.value.startsWith('=')) playSound('sheen')
     setEditing(null)
     if (rowDelta || colDelta) select(editing.row + rowDelta, editing.col + colDelta, false, true)
     focusGrid()
@@ -188,7 +192,7 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
     const bottom = Math.min(range.bottom, dimensions.height - 1)
     const right = Math.min(range.right, dimensions.width - 1)
     if (bottom < range.top || right < range.left) {
-      setNotice('Select some cells with numbers first.')
+      setNotice(words.selectNumbers)
       return
     }
 
@@ -319,6 +323,7 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
 
   const switchSheet = (nextSheet) => {
     finishEditing()
+    if (nextSheet !== sheet) playSound('rustle')
     setPreferredSheet(nextSheet)
     setSelection(singleCell(0, 0))
   }
@@ -326,7 +331,7 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
   const addSheet = () => {
     finishEditing()
     try {
-      switchSheet(store.addSheet())
+      switchSheet(store.addSheet(words.newSheetPrefix))
     } catch (error) {
       setNotice(error.message)
     }
@@ -336,16 +341,14 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
 
   const removeSheet = (sheetId) => {
     const name = store.getSheetName(sheetId)
-    if (!window.confirm(`Delete “${name}”? You can undo this with Ctrl+Z.`)) return
+    if (!window.confirm(words.confirmDeleteSheet(name))) return
     attempt(() => store.removeSheet(sheetId))
   }
 
   // Files ----------------------------------------------------------------
 
   const newWorkbook = () => {
-    if (store.canUndo() && !window.confirm('Start a new workbook? Changes you haven’t downloaded will be lost.')) {
-      return
-    }
+    if (store.canUndo() && !window.confirm(words.confirmNew)) return
     store.reset()
   }
 
@@ -354,10 +357,11 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
     const fileName = withExtension(store.getFileName(), bookType)
     const sheets = bookType === 'csv' ? [sheet] : undefined
     if (attempt(() => downloadWorkbook(store, { fileName, bookType, sheetIds: sheets }))) {
+      playSound('horn')
       setNotice(
         bookType === 'csv'
-          ? `Downloaded “${store.getSheetName(sheet)}” as ${fileName}.`
-          : `Downloaded ${fileName}.`,
+          ? words.downloadedSheet(store.getSheetName(sheet), fileName)
+          : words.downloaded(fileName),
       )
     }
   }

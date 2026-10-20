@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useWords } from '../hooks/useSettings.js'
 import { getFunction, POPULAR, QUICK_TOTALS } from '../lib/functions.js'
 import Icon from './Icon.jsx'
 
@@ -13,6 +14,7 @@ const FunctionMenu = ({ onTotal, onInsert, onBrowse }) => {
   // null when closed, otherwise where the menu opens: { top, left }.
   const [position, setPosition] = useState(null)
   const menuRef = useRef(null)
+  const words = useWords()
   const open = position !== null
 
   useEffect(() => {
@@ -41,7 +43,7 @@ const FunctionMenu = ({ onTotal, onInsert, onBrowse }) => {
       <button
         type="button"
         className="tool-button"
-        title="Insert a function"
+        title={words.functionsTitle}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={(event) => {
@@ -51,13 +53,13 @@ const FunctionMenu = ({ onTotal, onInsert, onBrowse }) => {
         }}
       >
         <Icon name="sigma" />
-        <span className="tool-label">Functions</span>
+        <span className="tool-label">{words.functions}</span>
         <Icon name="chevron" size={14} />
       </button>
 
       {open && (
-        <div className="menu" role="menu" aria-label="Functions" style={position}>
-          <p className="menu-heading">Total the selected cells</p>
+        <div className="menu" role="menu" aria-label={words.functions} style={position}>
+          <p className="menu-heading">{words.totalsHeading}</p>
           {QUICK_TOTALS.map((name) => (
             <button
               key={name}
@@ -70,7 +72,7 @@ const FunctionMenu = ({ onTotal, onInsert, onBrowse }) => {
               <code>{name}</code>
             </button>
           ))}
-          <p className="menu-heading">Popular</p>
+          <p className="menu-heading">{words.popularHeading}</p>
           {POPULAR.map((name) => (
             <button
               key={name}
@@ -85,7 +87,7 @@ const FunctionMenu = ({ onTotal, onInsert, onBrowse }) => {
           ))}
           <div className="menu-separator" role="separator" />
           <button type="button" role="menuitem" className="menu-item" onClick={() => choose(onBrowse)}>
-            <span>All functions…</span>
+            <span>{words.allFunctions}</span>
           </button>
         </div>
       )}

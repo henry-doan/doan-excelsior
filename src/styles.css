@@ -344,7 +344,8 @@ input {
   color: var(--chrome-ink);
 }
 
-.theme-option[aria-checked='true'] {
+.theme-option[aria-checked='true'],
+.theme-option[aria-pressed='true'] {
   background: var(--chrome-pressed);
   color: var(--chrome-pressed-ink);
 }
@@ -760,36 +761,53 @@ input {
   scrollbar-width: thin;
 }
 
+.sheet-list {
+  gap: 4px;
+  padding: 0 6px;
+}
+
+/* Each tab is a banner hanging from the footer's top edge, with a swallowtail notch. */
 .sheet-tab {
   display: flex;
   align-items: center;
-  border-right: 1px solid var(--chrome-rule);
+  padding-bottom: 6px;
+  border-top: 3px solid var(--banner);
+  background: color-mix(in srgb, var(--banner) 14%, var(--chrome));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 7px), 0 100%);
   white-space: nowrap;
+  transition: background 120ms;
+}
+
+.sheet-tab:hover {
+  background: color-mix(in srgb, var(--banner) 26%, var(--chrome));
 }
 
 .sheet-tab.is-active {
-  background: var(--sheet);
-  color: var(--ink);
-  box-shadow: inset 0 2px 0 var(--accent);
+  background: var(--banner);
 }
 
 .sheet-tab-button {
   height: 100%;
-  padding: 0 14px;
+  padding: 0 16px;
   border: 0;
   background: transparent;
   cursor: pointer;
-  color: var(--chrome-muted);
-}
-
-.sheet-tab-button:hover {
   color: var(--chrome-ink);
 }
 
 .sheet-tab.is-active .sheet-tab-button {
-  color: var(--ink);
+  color: var(--banner-ink);
   font-weight: 600;
   padding-right: 6px;
+}
+
+.sheet-tab.is-active .sheet-remove {
+  color: var(--banner-ink);
+}
+
+.sheet-tab.is-active .sheet-remove:hover {
+  background: rgb(0 0 0 / 0.18);
+  color: var(--banner-ink);
 }
 
 .sheet-remove {
@@ -1387,5 +1405,482 @@ input {
   /* The bar still fills, since it shows how long is left, but the stripes stay still. */
   .doan-loader__bar-fill {
     animation: doan-fill var(--loader-duration) linear forwards;
+  }
+}
+
+/* Opening a file ("Charge!") --------------------------------------------- */
+
+/* Fades in after a short delay, so quick opens never flash it. */
+.charge-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(5 12 9 / 0.55);
+  opacity: 0;
+  animation: charge-in 200ms ease 250ms forwards;
+}
+
+.charge-card {
+  display: grid;
+  justify-items: center;
+  width: min(300px, 100%);
+  padding: 18px 22px 20px;
+  border: 1px solid rgb(53 200 106 / 0.4);
+  border-radius: 14px;
+  background:
+    radial-gradient(70% 50% at 50% 40%, rgb(22 140 69 / 0.25), transparent 70%),
+    #0b1210;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.45);
+  color: #f3f7f4;
+  text-align: center;
+}
+
+.charge-title {
+  margin: 0 0 4px;
+  color: #35c86a;
+  font-family: var(--font-brand);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.charge-stage {
+  margin: 12px 0 2px;
+  font-weight: 600;
+}
+
+.charge-file {
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: rgb(243 247 244 / 0.65);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Real progress: the bar follows the width set in JS instead of the timed fill. */
+.doan-loader__bar-fill.is-determinate {
+  animation: doan-stripes 0.6s linear infinite;
+  transition: width 300ms ease;
+}
+
+.charge-overlay.is-immediate {
+  animation: none;
+  opacity: 1;
+}
+
+@keyframes charge-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .charge-overlay {
+    animation-duration: 1ms;
+  }
+
+  .doan-loader__bar-fill.is-determinate {
+    animation: none;
+  }
+}
+
+/* Castle gate (first page) ------------------------------------------------ */
+
+.gate {
+  /* The gate is always a night scene, whatever the theme. */
+  --brand-ink: #f3f7f4;
+  --brand-green: #35c86a;
+  --tilt-x: 0;
+  --tilt-y: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  overflow: hidden auto;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: #f3f7f4;
+  background: #050b10;
+}
+
+/* The painted sky, a little larger than the screen so it can drift with the pointer. */
+.gate-sky {
+  position: fixed;
+  inset: -3%;
+  background: var(--gate-sky) center 30% / cover no-repeat;
+  transform: translate(calc(var(--tilt-x) * -12px), calc(var(--tilt-y) * -8px));
+  transition: transform 400ms ease-out;
+}
+
+.gate-sky::after {
+  /* Darken toward the bottom so the buttons stay readable. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 45%, rgb(3 8 6 / 0.75));
+}
+
+.gate-scene {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: 100%;
+}
+
+.gate-brand {
+  margin: 0;
+  font: inherit;
+  filter: drop-shadow(0 4px 14px rgb(0 0 0 / 0.6));
+}
+
+.gate-brand .brand-emblem {
+  height: 64px;
+}
+
+/* Sized to fit the screen's height as well as its width, so the buttons stay in view. */
+.gate-stage {
+  position: relative;
+  width: min(100%, 780px, calc((100dvh - 380px) * 1600 / 1282));
+  min-width: min(100%, 320px);
+  aspect-ratio: 1600 / 1282;
+  margin-top: -6px;
+  transform: translate(calc(var(--tilt-x) * 6px), calc(var(--tilt-y) * 4px));
+  transform-origin: 49% 62%;
+  transition: transform 400ms ease-out;
+}
+
+.gate-layer,
+.gate-opening,
+.gate-torch,
+.gate-fog {
+  position: absolute;
+}
+
+.gate-layer {
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+.gate-castle {
+  filter: drop-shadow(0 18px 24px rgb(0 0 0 / 0.55));
+}
+
+/* The ground fades out at the sides and bottom instead of ending in hard edges. */
+.gate-ground {
+  mask-image:
+    linear-gradient(to right, transparent, #000 18%, #000 82%, transparent),
+    linear-gradient(#000 40%, transparent 92%);
+  mask-composite: intersect;
+}
+
+/* Behind the gate ------------------------------------------------------- */
+
+.gate-opening {
+  overflow: hidden;
+}
+
+.gate-inside,
+.gate-portcullis {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.gate-inside {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.35);
+  transition: filter calc(var(--gate-open) * 0.4) ease calc(var(--gate-open) * 0.3);
+}
+
+.gate-doors {
+  position: absolute;
+  inset: 0;
+  perspective: 900px;
+}
+
+.gate-door {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  transition: transform calc(var(--gate-open) * 0.42) cubic-bezier(0.45, 0, 0.2, 1) calc(var(--gate-open) * 0.3);
+}
+
+.gate-door.is-left {
+  left: 0;
+  transform-origin: left center;
+}
+
+.gate-door.is-right {
+  right: 0;
+  transform-origin: right center;
+}
+
+.gate-portcullis {
+  left: -3%;
+  top: -4%;
+  width: 106%;
+  height: 108%;
+  filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.5));
+  transition: transform calc(var(--gate-open) * 0.4) cubic-bezier(0.55, 0, 0.35, 1);
+}
+
+/* Torches, fog and embers ----------------------------------------------- */
+
+.gate-torch {
+  pointer-events: none;
+}
+
+/* The holder fills the bottom 56% of the box; the flame sits down inside its cup. */
+.gate-torch-holder {
+  position: absolute;
+  left: 15%;
+  bottom: 0;
+  width: 70%;
+  height: auto;
+  filter: brightness(1.25) drop-shadow(0 4px 4px rgb(0 0 0 / 0.6));
+}
+
+.gate-flame {
+  position: absolute;
+  left: 15%;
+  top: 9%;
+  z-index: 1;
+  width: 84%;
+  height: auto;
+  transform-origin: 50% 90%;
+  animation: gate-flicker 0.32s ease-in-out infinite alternate;
+}
+
+.gate-torch-glow {
+  position: absolute;
+  left: 57%;
+  top: 27%;
+  width: 320%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(rgb(246 183 60 / 0.38), transparent 65%);
+  mix-blend-mode: screen;
+  animation: gate-glow 1.1s ease-in-out infinite alternate;
+}
+
+.gate-ember {
+  position: absolute;
+  left: calc(49% + var(--ember) * 5%);
+  top: 14%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffcf6b;
+  box-shadow: 0 0 6px #ff9f2e;
+  opacity: 0;
+  animation: gate-ember 2.2s ease-out infinite;
+  animation-delay: calc(var(--ember) * 0.55s);
+}
+
+.gate-fog {
+  background:
+    radial-gradient(40% 60% at 30% 60%, rgb(200 230 215 / 0.16), transparent 70%),
+    radial-gradient(35% 50% at 70% 55%, rgb(200 230 215 / 0.13), transparent 70%);
+  filter: blur(8px);
+  pointer-events: none;
+  animation: gate-fog 14s ease-in-out infinite alternate;
+}
+
+/* Text and buttons --------------------------------------------------------- */
+
+.gate-tagline {
+  margin: 2px 0 16px;
+  color: rgb(243 247 244 / 0.8);
+  text-align: center;
+  text-shadow: 0 1px 6px rgb(0 0 0 / 0.8);
+}
+
+.gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.gate-button {
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+  padding: 12px 22px;
+  border: 1px solid rgb(212 172 43 / 0.75);
+  border-radius: 10px;
+  background: rgb(8 16 13 / 0.7);
+  backdrop-filter: blur(4px);
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: background 150ms, transform 150ms, box-shadow 150ms;
+}
+
+.gate-button.is-primary {
+  border-color: #35c86a;
+  background: linear-gradient(#1e7a46, #13562f);
+  box-shadow: 0 0 22px rgb(53 200 106 / 0.3);
+}
+
+.gate-button:hover:not(:disabled, .is-disabled) {
+  transform: translateY(-1px);
+  background: rgb(20 36 30 / 0.85);
+}
+
+.gate-button.is-primary:hover:not(:disabled) {
+  background: linear-gradient(#24904f, #176537);
+}
+
+.gate-button:focus-visible,
+.gate-button:has(input:focus-visible) {
+  outline: 2px solid #d4ac2b;
+  outline-offset: 3px;
+}
+
+.gate-button:disabled,
+.gate-button.is-disabled {
+  cursor: default;
+}
+
+.gate-button-title {
+  font-family: var(--font-brand);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.gate-button-hint {
+  color: rgb(243 247 244 / 0.75);
+  font-size: 13px;
+}
+
+.gate-drop-hint {
+  margin: 10px 0 0;
+  color: rgb(243 247 244 / 0.5);
+  font-size: 13px;
+}
+
+/* Opening: the portcullis rises into the stone, the doors swing inward,
+   light floods out, then we ride through the gate. */
+.gate.is-opening .gate-portcullis {
+  transform: translateY(-100%);
+}
+
+.gate.is-opening .gate-door.is-left {
+  transform: rotateY(78deg);
+}
+
+.gate.is-opening .gate-door.is-right {
+  transform: rotateY(-78deg);
+}
+
+.gate.is-opening .gate-inside {
+  filter: brightness(1.05);
+}
+
+.gate.is-opening .gate-stage {
+  transform: scale(3.2);
+  opacity: 0;
+  transition:
+    transform calc(var(--gate-open) * 0.4) ease-in calc(var(--gate-open) * 0.62),
+    opacity calc(var(--gate-open) * 0.25) ease-in calc(var(--gate-open) * 0.78);
+}
+
+.gate.is-opening .gate-brand,
+.gate.is-opening .gate-tagline,
+.gate.is-opening .gate-actions,
+.gate.is-opening .gate-drop-hint {
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+@keyframes gate-flicker {
+  from {
+    transform: scale(1, 1) rotate(-1.5deg);
+    opacity: 0.92;
+  }
+
+  to {
+    transform: scale(0.9, 1.1) rotate(1.5deg);
+    opacity: 1;
+  }
+}
+
+@keyframes gate-glow {
+  from {
+    opacity: 0.6;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gate-ember {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc((var(--ember) - 1.5) * 14px), -90px);
+  }
+}
+
+@keyframes gate-fog {
+  from {
+    transform: translateX(-4%);
+  }
+
+  to {
+    transform: translateX(4%);
+  }
+}
+
+@media (max-width: 520px) {
+  .gate-button {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-flame,
+  .gate-torch-glow,
+  .gate-ember,
+  .gate-fog {
+    animation: none;
+  }
+
+  .gate-ember {
+    display: none;
+  }
+
+  .gate-sky,
+  .gate-stage,
+  .gate-inside,
+  .gate-door,
+  .gate-portcullis {
+    transition: none !important;
+    transform: none !important;
   }
 }

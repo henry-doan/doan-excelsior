@@ -25,10 +25,38 @@ Built with React 19, the React Compiler, [HyperFormula](https://hyperformula.han
 - **Status bar** with Sum, Average and Count for the selected cells.
 - **Download** the whole workbook as `.xlsx`, or the current sheet as `.csv`.
 - **Large sheets** stay smooth: the grid only renders the cells on screen.
-- **Loading screen.** A galloping knight with an animated progress bar greets you for about four seconds when the page opens. It's a timed intro (change `SPLASH_DURATION` in `SplashScreen.jsx`); the app loads underneath it.
-- **Sword cursor** over the cells, in place of the usual plus. Text boxes, buttons and resize handles keep their normal cursors.
 - **Three themes**: Light, Dark and Knight, plus Match system. Your choice is remembered.
 - **Works on small screens**, and can be installed as an app from the browser.
+
+## Knight features
+
+Optional touches that make the app feel like a knight's ledger. The two toolbar switches next to the theme buttons turn on the wording and the sounds; both are off by default and remembered between visits.
+
+| Feature | How to use it |
+| --- | --- |
+| **Castle gate** | The first page you see, every visit: a painted castle at night under a green moon, with flickering torches, rising embers and drifting fog, and a slight depth shift as the mouse moves. Choose **Enter the keep** for a new workbook, or **Bring a scroll** to pick a file (you can also drop a file on the gate). The portcullis rises into the stone, the doors swing inward onto a sunlit courtyard and you ride through to the loading screen. A file chosen here opens behind the loading screen, so it's ready when the app appears. |
+| **Loading screen** | Shows for about four seconds after the castle gate: a galloping knight, the wordmark and a filling progress bar. It's a timed intro, and the app loads underneath it. Change the length with `SPLASH_DURATION` in `src/components/SplashScreen.jsx`. |
+| **Knightly speech** | Click the **scroll** button. Buttons, menus, the status bar and messages switch to a medieval voice (see the table below). Only the wording changes, never what a button does, and formula error codes like `#DIV/0!` stay as they are. While it's on, new sheets are named *Banner 2*, *Banner 3*… |
+| **Banner sheet tabs** | Always on. Sheet tabs hang like swallowtail pennants in heraldic colors: green, gold, crimson, blue and purple, in turn. The active tab is filled in. |
+| **`=EXCELSIOR()`** | Type it in any cell to get a random knightly motto, such as *“Let no #REF! go unanswered.”* It appears in autocomplete and under **Knightly** in All functions. Excel doesn't know it, so a downloaded file keeps the motto as the cell's saved value, but Excel shows `#NAME?` if it recalculates. |
+| **Sound effects** | Click the **speaker** button; a short sword sound confirms it's on. Then you'll hear a sword being drawn when you save a formula, a horse when a file opens, parchment when you switch sheets, a horn when you download and the portcullis rattling up at the castle gate. |
+| **“Charge!” while opening** | Shows automatically when a file takes a moment to open: a small galloping knight with real progress through reading the file, reading the sheets and calculating formulas. It appears at once for files over 1 MB, and only after a quarter of a second for smaller ones, so quick opens don't flash. |
+| **Sword cursor** | Always on over the cells, in place of the usual plus. Text boxes, buttons, headers and resize handles keep their normal cursors. The click point is the tip of the blade. |
+
+**Knightly wording**
+
+| Plain | Knightly |
+| --- | --- |
+| New, Open | Forge, Summon scroll |
+| Download .xlsx / .csv | Seal as .xlsx / .csv |
+| Undo, Redo | Retreat, Advance |
+| Insert / Delete rows and columns | Raise / Banish rows and columns |
+| Functions, Shortcuts | Spellbook, Battle keys |
+| Sum, Average, Count | Tribute, Mean, Muster |
+| Add sheet | Raise a banner |
+| Opening | Charge! |
+
+**No sound?** Make sure the speaker button is on (it shows sound waves rather than an ×), the browser tab isn't muted (right-click the tab) and your system volume is up. Browsers only allow sound after you've clicked or typed on the page, so the very first sound needs an interaction first.
 
 ## Getting started
 
@@ -126,7 +154,8 @@ src/
 ├── main.jsx                  Entry point
 ├── assets/
 │   ├── emblem.png            Knight emblem from the logo
-│   └── knight-loader.webp    Galloping knight for the loading screen
+│   ├── knight-loader.webp    Galloping knight for the loading screen
+│   └── gate/                 Castle gate layers (sky, castle, ground, courtyard, doors, portcullis, torch, flame)
 ├── App.jsx                   Creates the workbook store and provides it
 ├── styles.css                All styles, with light and dark color tokens
 ├── context/
@@ -134,23 +163,30 @@ src/
 ├── hooks/
 │   ├── useWorkbook.js        Subscribes a component to workbook changes
 │   ├── useFunctionAutocomplete.js  Function suggestions for formula inputs
+│   ├── useSettings.js        Reads settings, and the wording for the current voice
 │   └── useTheme.js           Reads and sets the theme
 ├── lib/
 │   ├── workbookStore.js      Wraps HyperFormula: reads, edits, undo, sheets
 │   ├── columns.js            Column widths and pixel offsets
 │   ├── functions.js          Function catalog, search and formula text helpers
+│   ├── excelsiorFunction.js  Registers the =EXCELSIOR() custom function
+│   ├── lexicon.js            Plain and knightly interface wording
+│   ├── settingsStore.js      Remembers knightly speech and sound settings
+│   ├── sounds.js             Synthesized sound effects (Web Audio)
 │   ├── fileIO.js             Reads and writes files with SheetJS
 │   ├── format.js             Turns values and number formats into display text
 │   ├── address.js            A1-style labels and range helpers
 │   ├── tsv.js                Clipboard text in and out
 │   └── themeStore.js         Saves and applies the theme
 └── components/
-    ├── SplashScreen.jsx      Timed full-screen loader shown on arrival
+    ├── CastleGate.jsx        The castle gate shown first on every visit
+    ├── SplashScreen.jsx      Timed full-screen loader shown after the gate
     ├── DoanExcelsiorLoader.jsx  Knight, wordmark and progress bar
     ├── Workspace.jsx         File opening, drag and drop, page title
     ├── WorkbookView.jsx      Selection, editing and every action
     ├── Brand.jsx             Emblem and wordmark
     ├── ThemePicker.jsx       System, Light, Dark and Knight switch
+    ├── SettingsToggles.jsx   Knightly speech and sound on/off buttons
     ├── Toolbar.jsx           File and editing buttons
     ├── FormulaBar.jsx        Cell address and raw contents
     ├── Grid.jsx              The virtualized grid, mouse and keyboard
@@ -178,6 +214,12 @@ src/
 **The grid.** Only the visible cells (plus a few extra around the edges) are rendered. Row and column headers stay in place with CSS `position: sticky`, so no scroll syncing code is needed. Because columns can have different widths, `columnLayout` in `columns.js` builds a table of column offsets, and a binary search finds the column under the mouse or at the edge of the screen.
 
 **Functions.** HyperFormula supplies the functions (`getRegisteredFunctionNames`) but not their descriptions, so `functions.js` documents about 90 common ones with syntax and a one-line summary, and sorts the rest into categories. The cell editor and formula bar share `useFunctionAutocomplete`, which looks at the text before the caret to find a function name being typed or the function call the caret is inside.
+
+**The castle gate art** is stacked in layers so parts can move. From back to front: the sky (the page background), the ground, then everything inside the archway (the courtyard, the two doors and the portcullis) clipped to the arch's traced outline, then the castle on top, then the torches and fog. Positions are given in the castle artwork's own pixels (1600×1000, plus 282 for the ground) and turned into percentages, so the whole scene scales together. The original PNGs are kept in `art/castle-gate/` (not shipped); the app uses compressed WebP copies in `src/assets/gate/`. The ground's printed filename label was cropped off, and the flame's dark backing faded out, during that conversion.
+
+**Arrival.** `App.jsx` moves through three phases: the castle gate, the loading screen, then the app. The app renders underneath the whole time (marked `inert` so the keyboard can't reach it), so it's ready the moment the loading screen fades. A file chosen at the gate is handed to `Workspace`, which starts opening it straight away.
+
+**Knight features.** `settingsStore.js` remembers the two switches, and `useWords()` returns the wording for the current voice from `lexicon.js`, so components never hard-code button text. Sounds in `sounds.js` are built from oscillators and filtered noise with the Web Audio API. Each one has a volume level tuned by measuring it, and they all go through a limiter so overlapping sounds don't distort. `=EXCELSIOR()` is a HyperFormula function plugin registered in `excelsiorFunction.js` before any engine is created. While a file opens, `readWorkbookFile` reports each step, and `Workspace` waits for the browser to paint between steps so the progress bar actually updates.
 
 **Opening a new file** changes a `generation` number in the store. `WorkbookView` uses it as its `key`, so React resets selection, editing and the active sheet automatically.
 
@@ -213,6 +255,12 @@ src/
 - **No autosave.** Download your work before closing the tab.
 
 ## Ideas for next steps
+
+Knight feature planned next:
+
+- **The error dragon**: when a sheet has formula errors, a small dragon perches on the status bar; clicking it jumps to each error in turn, and it flies off once they're all fixed.
+
+Spreadsheet features:
 
 Adjustable row heights, bold/italic/fill formatting that round-trips to Excel, the fill handle, find and replace, freezing rows and columns, sorting and filtering, charts, and saving work in the browser between sessions.
 
