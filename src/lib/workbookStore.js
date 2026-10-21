@@ -2,11 +2,13 @@ import { HyperFormula } from 'hyperformula'
 import * as XLSX from 'xlsx'
 import { clampWidth, shiftWidths } from './columns.js'
 import './excelsiorFunction.js'
-import { detectedFormat, parseInput, toEditText } from './format.js'
+import { detectedFormat, isErrorValue, parseInput, toEditText } from './format.js'
 
 export const MAX_ROWS = 100_000
 export const MAX_COLUMNS = 16_384
 const HISTORY_LIMIT = 100
+// The error dragon stops counting here, so a broken workbook can't stall the page.
+export const ERROR_LIMIT = 10_000
 
 const ENGINE_CONFIG = {
   // HyperFormula is dual-licensed. See the README before shipping commercially.
@@ -61,12 +63,14 @@ export const createWorkbookStore = () => {
   let generation = 0
   let version = 0
   let view = null
+  let errors = null
   let undoStack = []
   let redoStack = []
   const listeners = new Set()
 
   const notify = () => {
     version += 1
+    errors = null
     // A fresh snapshot object per change lets React (and the React Compiler)
     // see that anything read from the workbook may be different now.
     view = { ...api, version }
@@ -152,6 +156,27 @@ export const createWorkbookStore = () => {
 
   /** Custom column widths for a sheet, as a Map of column index to pixels. */
   const getColumnWidths = (sheet) => sheetWidths(sheet)
+
+  /**
+   * Every cell showing an error (#DIV/0!, #REF!, …) as { sheet, row, col },
+   * in sheet-tab order and then reading order. Worked out once per change.
+   */
+  const getErrors = () => {
+    if (errors) return errors
+    errors = []
+    for (const sheet of getSheetIds()) {
+      const values = engine.getSheetValues(sheet)
+      for (let row = 0; row < values.length; row += 1) {
+        const cells = values[row]
+        for (let col = 0; col < cells.length; col += 1) {
+          if (!isErrorValue(cells[col])) continue
+          errors.push({ sheet, row, col })
+          if (errors.length >= ERROR_LIMIT) return errors
+        }
+      }
+    }
+    return errors
+  }
 
   const isFormula = (sheet, row, col) => engine.doesCellHaveFormula({ sheet, row, col })
   const canUndo = () => undoStack.length > 0
@@ -300,6 +325,7 @@ export const createWorkbookStore = () => {
     getNumberFormat,
     getEditText,
     getColumnWidths,
+    getErrors,
     isFormula,
     canUndo,
     canRedo,

@@ -9,10 +9,12 @@ import { getSettings } from './settingsStore.js'
  * - rustle:  parchment, when switching sheets
  * - horn:    a short fanfare, when downloading
  * - gate:    a portcullis rattling up, when entering the castle
+ * - roar:    a dragon's growl, when the error dragon lands
+ * - triumph: a rising fanfare, when the last error is fixed and the dragon flies off
  */
 
 // Per-sound loudness, tuned by measuring each one so they all peak around 60–70% of full scale.
-const SOUND_LEVELS = { sheen: 1.2, whinny: 1.9, rustle: 3.2, horn: 0.7, gate: 1 }
+const SOUND_LEVELS = { sheen: 1.2, whinny: 1.9, rustle: 3.2, horn: 0.7, gate: 1, roar: 0.5, triumph: 0.7 }
 
 let context = null
 let noiseBuffer = null
@@ -189,7 +191,155 @@ const gate = (ctx, out, now) => {
   thud.stop(now + 1.7)
 }
 
-const SOUNDS = { sheen, whinny, rustle, horn, gate }
+/** Soft clipping, which roughens a voice without making it buzz. */
+const growlCurve = (drive) => {
+  const curve = new Float32Array(1024)
+  for (let i = 0; i < curve.length; i += 1) {
+    const x = (i / (curve.length - 1)) * 2 - 1
+    curve[i] = Math.tanh(x * drive) / Math.tanh(drive)
+  }
+  return curve
+}
+
+/** A cave-like echo: a second and a half of fading noise to convolve with. */
+const caveEcho = (ctx) => {
+  const length = Math.round(ctx.sampleRate * 1.5)
+  const impulse = ctx.createBuffer(1, length, ctx.sampleRate)
+  const data = impulse.getChannelData(0)
+  for (let i = 0; i < length; i += 1) data[i] = (Math.random() * 2 - 1) * Math.exp((-4 * i) / length)
+  const echo = ctx.createConvolver()
+  echo.buffer = impulse
+  return echo
+}
+
+const roar = (ctx, out, now) => {
+  const end = now + 1.9
+  // Everything passes through one throat: a swell to full voice, held, then a long fade.
+  const throat = ctx.createGain()
+  throat.gain.setValueAtTime(0.0001, now)
+  throat.gain.exponentialRampToValueAtTime(1, now + 0.28)
+  throat.gain.setValueAtTime(1, now + 0.75)
+  throat.gain.exponentialRampToValueAtTime(0.0001, end)
+
+  // A fast, uneven rattle in the loudness gives the growl its gravel.
+  const rattle = ctx.createGain()
+  rattle.gain.value = 0.65
+  const rattleRate = ctx.createOscillator()
+  rattleRate.frequency.setValueAtTime(28, now)
+  rattleRate.frequency.linearRampToValueAtTime(38, now + 0.6)
+  rattleRate.frequency.linearRampToValueAtTime(24, end)
+  const rattleDepth = ctx.createGain()
+  rattleDepth.gain.value = 0.25
+  rattleRate.connect(rattleDepth).connect(rattle.gain)
+  // A slower wobble at an unrelated rate keeps the rattle from sounding like a motor.
+  const wobbleRate = ctx.createOscillator()
+  wobbleRate.frequency.value = 9.3
+  const wobbleDepth = ctx.createGain()
+  wobbleDepth.gain.value = 0.15
+  wobbleRate.connect(wobbleDepth).connect(rattle.gain)
+
+  // The voice: a low tone and the octave below it, which makes the beast sound huge.
+  const pitch = [
+    [now, 95],
+    [now + 0.35, 140],
+    [now + 0.8, 125],
+    [end, 70],
+  ]
+  for (const [ratio, level] of [[1, 0.5], [0.5, 0.6]]) {
+    const voice = ctx.createOscillator()
+    voice.type = 'sawtooth'
+    voice.frequency.setValueAtTime(pitch[0][1] * ratio, now)
+    for (const [at, frequency] of pitch.slice(1)) voice.frequency.exponentialRampToValueAtTime(frequency * ratio, at)
+    const gain = ctx.createGain()
+    gain.gain.value = level
+    voice.connect(gain).connect(rattle)
+    voice.start(now)
+    voice.stop(end)
+  }
+
+  // Breath: roars are mostly air, so noise carries much of the sound.
+  const air = ctx.createBiquadFilter()
+  air.type = 'lowpass'
+  air.frequency.value = 3500
+  const airLevel = ctx.createGain()
+  airLevel.gain.value = 0.9
+  noiseSource(ctx, now, 1.9).connect(air).connect(airLevel).connect(rattle)
+
+  const grit = ctx.createWaveShaper()
+  grit.curve = growlCurve(2.5)
+  rattle.connect(grit)
+
+  // Vowel resonances of the mouth opening from "ahh" toward "aww" and closing again.
+  const formants = [
+    { level: 1, q: 5, sweep: [[now, 450], [now + 0.4, 750], [end, 380]] },
+    { level: 0.55, q: 7, sweep: [[now, 1000], [now + 0.4, 1250], [end, 850]] },
+    { level: 0.25, q: 8, sweep: [[now, 2500], [now + 0.4, 2700], [end, 2300]] },
+  ]
+  for (const { level, q, sweep } of formants) {
+    const band = ctx.createBiquadFilter()
+    band.type = 'bandpass'
+    band.Q.value = q
+    band.frequency.setValueAtTime(sweep[0][1], now)
+    for (const [at, frequency] of sweep.slice(1)) band.frequency.exponentialRampToValueAtTime(frequency, at)
+    const gain = ctx.createGain()
+    gain.gain.value = level * 2.2
+    grit.connect(band).connect(gain).connect(throat)
+  }
+  // The chest: the low end on its own, for weight.
+  const chest = ctx.createBiquadFilter()
+  chest.type = 'lowpass'
+  chest.frequency.value = 260
+  const chestLevel = ctx.createGain()
+  chestLevel.gain.value = 0.5
+  grit.connect(chest).connect(chestLevel).connect(throat)
+
+  // Dry voice plus a cave echo behind it.
+  throat.connect(out)
+  const echo = caveEcho(ctx)
+  const echoLevel = ctx.createGain()
+  echoLevel.gain.value = 0.35
+  throat.connect(echo).connect(echoLevel).connect(out)
+
+  for (const node of [rattleRate, wobbleRate]) {
+    node.start(now)
+    node.stop(end)
+  }
+}
+
+const triumph = (ctx, out, now) => {
+  // A rising call (C, E, G, then a held high C) in the horn's brassy tone.
+  const notes = [
+    [523.25, 0, 0.12],
+    [659.25, 0.13, 0.12],
+    [783.99, 0.26, 0.12],
+    [1046.5, 0.4, 0.75],
+  ]
+  for (const [frequency, offset, length] of notes) {
+    const start = now + offset
+    const brass = ctx.createBiquadFilter()
+    brass.type = 'lowpass'
+    brass.frequency.setValueAtTime(900, start)
+    brass.frequency.linearRampToValueAtTime(3200, start + 0.06)
+    brass.Q.value = 1.5
+    brass.connect(envelope(ctx, out, start, 0.025, 0.4, length))
+    for (const [type, detune] of [['sawtooth', 0], ['square', 7]]) {
+      const tone = ctx.createOscillator()
+      tone.type = type
+      tone.frequency.value = frequency
+      tone.detune.value = detune
+      tone.connect(brass)
+      tone.start(start)
+      tone.stop(start + length + 0.1)
+    }
+  }
+  // A cymbal-like shimmer on the last note.
+  const shimmer = ctx.createBiquadFilter()
+  shimmer.type = 'highpass'
+  shimmer.frequency.value = 6000
+  noiseSource(ctx, now + 0.4, 0.8).connect(shimmer).connect(envelope(ctx, out, now + 0.4, 0.01, 0.15, 0.7))
+}
+
+const SOUNDS = { sheen, whinny, rustle, horn, gate, roar, triumph }
 
 /** Plays a sound by name if sound effects are on. `force` plays it regardless (for the toggle's preview). */
 export const playSound = (name, { force = false } = {}) => {

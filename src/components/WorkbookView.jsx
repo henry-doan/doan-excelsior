@@ -1,5 +1,5 @@
 import { Activity, useEffect, useRef, useState } from 'react'
-import { useWords } from '../hooks/useSettings.js'
+import { useSettings, useWords } from '../hooks/useSettings.js'
 import { useWorkbook } from '../hooks/useWorkbook.js'
 import { cellLabel, clamp, normalizeRange, rangeSize } from '../lib/address.js'
 import { downloadWorkbook, withExtension } from '../lib/fileIO.js'
@@ -8,6 +8,7 @@ import { closeParens } from '../lib/functions.js'
 import { playSound } from '../lib/sounds.js'
 import { fromTsv, toTsv } from '../lib/tsv.js'
 import { MAX_COLUMNS, MAX_ROWS } from '../lib/workbookStore.js'
+import ErrorDragon from './ErrorDragon.jsx'
 import FormulaBar from './FormulaBar.jsx'
 import FunctionPicker from './FunctionPicker.jsx'
 import Grid from './Grid.jsx'
@@ -32,6 +33,7 @@ const singleCell = (row, col, reveal = false) => ({ row, col, endRow: row, endCo
 const WorkbookView = ({ onOpenFile, isOpening }) => {
   const store = useWorkbook()
   const words = useWords()
+  const [settings] = useSettings()
   const gridRef = useRef(null)
   const clipboardText = useRef(null)
   const sheetIds = store.getSheetIds()
@@ -130,8 +132,12 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
 
   const commitEditing = (rowDelta = 0, colDelta = 0) => {
     if (!editing) return
+    // Only checked with sound on, since a huge workbook takes a moment to scan.
+    const hadErrors = settings.sound && store.getErrors().length > 0
     const saved = attempt(() => store.setCell(sheet, editing.row, editing.col, closeParens(editing.value)))
-    if (saved && editing.value.startsWith('=')) playSound('sheen')
+    // When this formula wakes or slays the error dragon, its roar or fanfare plays instead.
+    const stirsDragon = settings.sound && hadErrors !== store.getErrors().length > 0
+    if (saved && editing.value.startsWith('=') && !stirsDragon) playSound('sheen')
     setEditing(null)
     if (rowDelta || colDelta) select(editing.row + rowDelta, editing.col + colDelta, false, true)
     focusGrid()
@@ -345,6 +351,29 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
     attempt(() => store.removeSheet(sheetId))
   }
 
+  // Errors ---------------------------------------------------------------
+
+  /** Selects the first error after the active cell, wrapping to the first sheet. */
+  const jumpToError = (errors) => {
+    if (errors.length === 0) return
+    finishEditing()
+    const order = store.getSheetIds()
+    const position = (cell) => [order.indexOf(cell.sheet), cell.row, cell.col]
+    const current = position({ sheet, row: selection.row, col: selection.col })
+    const isAfterCurrent = (cell) => {
+      const next = position(cell)
+      const index = next.findIndex((value, i) => value !== current[i])
+      return index !== -1 && next[index] > current[index]
+    }
+    const target = errors.find(isAfterCurrent) ?? errors[0]
+    if (target.sheet !== sheet) {
+      playSound('rustle')
+      setPreferredSheet(target.sheet)
+    }
+    setSelection(singleCell(target.row, target.col, true))
+    focusGrid()
+  }
+
   // Files ----------------------------------------------------------------
 
   const newWorkbook = () => {
@@ -445,6 +474,7 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
           onRename={renameSheet}
           onRemove={removeSheet}
         />
+        <ErrorDragon onJump={jumpToError} />
         <StatusBar sheet={sheet} selection={selection} />
       </footer>
 

@@ -39,8 +39,9 @@ Optional touches that make the app feel like a knight's ledger. The two toolbar 
 | **Knightly speech** | Click the **scroll** button. Buttons, menus, the status bar and messages switch to a medieval voice (see the table below). Only the wording changes, never what a button does, and formula error codes like `#DIV/0!` stay as they are. While it's on, new sheets are named *Banner 2*, *Banner 3*… |
 | **Banner sheet tabs** | Always on. Sheet tabs hang like swallowtail pennants in heraldic colors: green, gold, crimson, blue and purple, in turn. The active tab is filled in. |
 | **`=EXCELSIOR()`** | Type it in any cell to get a random knightly motto, such as *“Let no #REF! go unanswered.”* It appears in autocomplete and under **Knightly** in All functions. Excel doesn't know it, so a downloaded file keeps the motto as the cell's saved value, but Excel shows `#NAME?` if it recalculates. |
-| **Sound effects** | Click the **speaker** button; a short sword sound confirms it's on. Then you'll hear a sword being drawn when you save a formula, a horse when a file opens, parchment when you switch sheets, a horn when you download and the portcullis rattling up at the castle gate. |
+| **Sound effects** | Click the **speaker** button; a short sword sound confirms it's on. Then you'll hear a sword being drawn when you save a formula, a horse when a file opens, parchment when you switch sheets, a horn when you download, the portcullis rattling up at the castle gate, a dragon's roar when the error dragon lands and a victory fanfare when you slay it. |
 | **“Charge!” while opening** | Shows automatically when a file takes a moment to open: a small galloping knight with real progress through reading the file, reading the sheets and calculating formulas. It appears at once for files over 1 MB, and only after a quarter of a second for smaller ones, so quick opens don't flash. |
+| **Error dragon** | Always on. While any cell in the workbook shows an error (`#DIV/0!`, `#REF!`, `#NAME?`…), a dragon perches on the status bar above a count of the errors. It can't be dismissed: click it to jump to the next error, on any sheet, and it flies off once every error is fixed (or undone). With sound on, it roars as it lands and a fanfare plays when it leaves; when an edit or a newly opened file wakes or slays the dragon, only the dragon's sound plays, not the usual sword or horse. It counts up to 10,000 errors. |
 | **Sword cursor** | Always on over the cells, in place of the usual plus. Text boxes, buttons, headers and resize handles keep their normal cursors. The click point is the tip of the blade. |
 
 **Knightly wording**
@@ -55,6 +56,7 @@ Optional touches that make the app feel like a knight's ledger. The two toolbar 
 | Sum, Average, Count | Tribute, Mean, Muster |
 | Add sheet | Raise a banner |
 | Opening | Charge! |
+| 3 errors | 3 to slay |
 
 **No sound?** Make sure the speaker button is on (it shows sound waves rather than an ×), the browser tab isn't muted (right-click the tab) and your system volume is up. Browsers only allow sound after you've clicked or typed on the page, so the very first sound needs an interaction first.
 
@@ -155,6 +157,7 @@ src/
 ├── assets/
 │   ├── emblem.png            Knight emblem from the logo
 │   ├── knight-loader.webp    Galloping knight for the loading screen
+│   ├── dragon/dragon.webp    Error dragon, cut from art/dragon/dragon-error.png
 │   └── gate/                 Castle gate layers (sky, castle, ground, courtyard, doors, portcullis, torch, flame)
 ├── App.jsx                   Creates the workbook store and provides it
 ├── styles.css                All styles, with light and dark color tokens
@@ -195,6 +198,7 @@ src/
     ├── FunctionMenu.jsx      The Σ Functions dropdown in the toolbar
     ├── FunctionPicker.jsx    Searchable dialog of every function
     ├── SheetTabs.jsx         Sheet tabs, add, rename, delete
+    ├── ErrorDragon.jsx       The dragon that guards formula errors
     ├── StatusBar.jsx         Sum, Average and Count
     ├── ShortcutsPanel.jsx    Keyboard shortcuts list
     ├── Toast.jsx             Short messages and errors
@@ -255,10 +259,6 @@ src/
 - **No autosave.** Download your work before closing the tab.
 
 ## Ideas for next steps
-
-Knight feature planned next:
-
-- **The error dragon**: when a sheet has formula errors, a small dragon perches on the status bar; clicking it jumps to each error in turn, and it flies off once they're all fixed.
 
 Spreadsheet features:
 

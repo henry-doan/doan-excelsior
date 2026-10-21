@@ -47,7 +47,8 @@ const Workspace = ({ inert = false, fileToOpen = null }) => {
       await report('build', 0.75)
       store.load(sheets, file.name)
       setProgress((current) => ({ ...current, fraction: 1 }))
-      playSound('whinny')
+      // A file with errors greets you with the error dragon's roar instead.
+      if (store.getErrors().length === 0) playSound('whinny')
       return { error: null }
     } catch (error) {
       return { error: `Couldn’t open “${file.name}”. ${error.message} Try an .xlsx, .xls, .ods or .csv file.` }

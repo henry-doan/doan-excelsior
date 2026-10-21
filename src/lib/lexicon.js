@@ -42,6 +42,11 @@ const plain = {
   confirmOpen: (fileName) => `Open “${fileName}”? Changes you haven’t downloaded will be lost.`,
   confirmDeleteSheet: (sheetName) => `Delete “${sheetName}”? You can undo this with Ctrl+Z.`,
   selectNumbers: 'Select some cells with numbers first.',
+  dragonCount: (count, label) => `${label} ${count === 1 ? 'error' : 'errors'}`,
+  dragonTitle: (count) =>
+    `${count === 1 ? 'A cell shows an error' : `${count.toLocaleString()} cells show errors`}. Click to go to the next one.`,
+  dragonSlain: 'All errors fixed.',
+  dragonSlainShort: 'All fixed',
 }
 
 const knightly = {
@@ -81,6 +86,11 @@ const knightly = {
   confirmOpen: (fileName) => `Summon “${fileName}”? Deeds not yet sealed (downloaded) shall be lost.`,
   confirmDeleteSheet: (sheetName) => `Lower the banner “${sheetName}”? Thou mayest retreat with Ctrl+Z.`,
   selectNumbers: 'Choose cells bearing numbers first, good knight.',
+  dragonCount: (count, label) => `${label} to slay`,
+  dragonTitle: (count) =>
+    `A dragon guards ${count === 1 ? 'an errant cell' : `${count.toLocaleString()} errant cells`}! Strike to face the next.`,
+  dragonSlain: 'The dragon is slain! Every error is mended.',
+  dragonSlainShort: 'Slain!',
 }
 
 export const WORDS = { plain, knightly }
