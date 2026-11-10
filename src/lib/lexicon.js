@@ -17,6 +17,16 @@ const plain = {
   deleteRows: 'Delete rows',
   insertColumn: 'Insert column',
   deleteColumns: 'Delete columns',
+  sortAsc: 'Sort A–Z',
+  sortDesc: 'Sort Z–A',
+  sortAscTitle: 'Sort rows by the active column, smallest or A first',
+  sortDescTitle: 'Sort rows by the active column, largest or Z first',
+  sorted: (rows, column, descending, { header, totals }) =>
+    `Sorted rows ${rows} by column ${column}, ${descending ? 'Z to A' : 'A to Z'}.` +
+    (header ? ` Row ${header} stayed as the header.` : '') +
+    (totals ? ` Row ${totals} stayed as the totals.` : ''),
+  alreadySorted: (column) => `Already in order by column ${column}.`,
+  nothingToSort: 'There’s nothing to sort yet. Type or open some rows first.',
   functions: 'Functions',
   functionsTitle: 'Insert a function',
   totalsHeading: 'Total the selected cells',
@@ -30,6 +40,7 @@ const plain = {
   count: 'Count',
   knightlyToggle: 'Knightly speech',
   soundToggle: 'Sound effects',
+  squireToggle: 'Squire',
   chargeTitle: 'Opening',
   stages: {
     read: 'Reading the file',
@@ -63,6 +74,16 @@ const knightly = {
   deleteRows: 'Banish rows',
   insertColumn: 'Raise column',
   deleteColumns: 'Banish columns',
+  sortAsc: 'Marshal A–Z',
+  sortDesc: 'Marshal Z–A',
+  sortAscTitle: 'Marshal the ranks by the chosen column, least or A first',
+  sortDescTitle: 'Marshal the ranks by the chosen column, greatest or Z first',
+  sorted: (rows, column, descending, { header, totals }) =>
+    `The ranks of rows ${rows} are marshalled by column ${column}, ${descending ? 'Z to A' : 'A to Z'}.` +
+    (header ? ` Row ${header} holdeth its place as the banner.` : '') +
+    (totals ? ` Row ${totals} keepeth the tally at the rear.` : ''),
+  alreadySorted: (column) => `The ranks already stand in order by column ${column}.`,
+  nothingToSort: 'There are no ranks to marshal yet, good knight.',
   functions: 'Spellbook',
   functionsTitle: 'Cast a function',
   totalsHeading: 'Tally the chosen cells',
@@ -74,6 +95,7 @@ const knightly = {
   sum: 'Tribute',
   average: 'Mean',
   count: 'Muster',
+  squireToggle: 'Summon thy squire',
   chargeTitle: 'Charge!',
   stages: {
     read: 'Unrolling the scroll',

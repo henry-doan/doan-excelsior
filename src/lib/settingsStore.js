@@ -1,10 +1,10 @@
 /**
- * Small preferences remembered between visits: knightly wording and sound
- * effects. Both are off by default so the app reads as a plain spreadsheet.
+ * Small preferences remembered between visits: knightly wording, sound
+ * effects and the squire. All are off by default so the app reads as a plain spreadsheet.
  */
 
 const STORAGE_KEY = 'doan-excelsior-settings'
-const DEFAULTS = { knightly: false, sound: false }
+const DEFAULTS = { knightly: false, sound: false, squire: false }
 
 const readStoredSettings = () => {
   try {
@@ -12,6 +12,7 @@ const readStoredSettings = () => {
     return {
       knightly: typeof stored?.knightly === 'boolean' ? stored.knightly : DEFAULTS.knightly,
       sound: typeof stored?.sound === 'boolean' ? stored.sound : DEFAULTS.sound,
+      squire: typeof stored?.squire === 'boolean' ? stored.squire : DEFAULTS.squire,
     }
   } catch {
     return DEFAULTS

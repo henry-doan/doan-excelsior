@@ -2,7 +2,7 @@ import { useSettings, useWords } from '../hooks/useSettings.js'
 import { playSound } from '../lib/sounds.js'
 import Icon from './Icon.jsx'
 
-/** Two on/off switches: knightly wording and sound effects. Both are remembered. */
+/** Three on/off switches: knightly wording, sound effects and the squire. All are remembered. */
 const SettingsToggles = () => {
   const [settings, updateSettings] = useSettings()
   const words = useWords()
@@ -35,6 +35,16 @@ const SettingsToggles = () => {
         onClick={toggleSound}
       >
         <Icon name={settings.sound ? 'sound' : 'mute'} size={16} />
+      </button>
+      <button
+        type="button"
+        className="theme-option"
+        aria-pressed={settings.squire}
+        aria-label={words.squireToggle}
+        title={words.squireToggle}
+        onClick={() => updateSettings({ squire: !settings.squire })}
+      >
+        <Icon name="helm" size={16} />
       </button>
     </div>
   )

@@ -12,10 +12,11 @@ import { getSettings } from './settingsStore.js'
  * - roar:    a dragon's growl, when the error dragon lands
  * - triumph: a rising fanfare, when the last error is fixed and the dragon flies off
  * - eclipse: a low, eerie swell and a shimmer at totality, when the moon is clicked
+ * - pluck:   two soft lute notes, when the squire speaks
  */
 
 // Per-sound loudness, tuned by measuring each one so they all peak around 60–70% of full scale.
-const SOUND_LEVELS = { sheen: 1.2, whinny: 1.9, rustle: 3.2, horn: 0.7, gate: 1, roar: 0.5, triumph: 0.7, eclipse: 0.25 }
+const SOUND_LEVELS = { sheen: 1.2, whinny: 1.9, rustle: 3.2, horn: 0.7, gate: 1, roar: 0.5, triumph: 0.7, eclipse: 0.25, pluck: 0.85 }
 
 let context = null
 let noiseBuffer = null
@@ -402,7 +403,38 @@ const eclipse = (ctx, out, now) => {
   }
 }
 
-const SOUNDS = { sheen, whinny, rustle, horn, gate, roar, triumph, eclipse }
+/** One plucked string: a bright attack whose overtones fade quickly, like a lute. */
+const pluckNote = (ctx, out, start, frequency, level) => {
+  const tone = ctx.createBiquadFilter()
+  tone.type = 'lowpass'
+  tone.Q.value = 2
+  tone.frequency.setValueAtTime(frequency * 8, start)
+  tone.frequency.exponentialRampToValueAtTime(frequency * 1.5, start + 0.25)
+  const body = envelope(ctx, out, start, 0.004, level, 0.9)
+  tone.connect(body)
+  for (const [type, detune] of [['sawtooth', -4], ['triangle', 5]]) {
+    const string = ctx.createOscillator()
+    string.type = type
+    string.frequency.value = frequency
+    string.detune.value = detune
+    string.connect(tone)
+    string.start(start)
+    string.stop(start + 1)
+  }
+  // The fingertip on the string.
+  const click = ctx.createBiquadFilter()
+  click.type = 'bandpass'
+  click.frequency.value = frequency * 4
+  noiseSource(ctx, start, 0.03).connect(click)
+  click.connect(envelope(ctx, out, start, 0.002, level * 0.6, 0.025))
+}
+
+const pluck = (ctx, out, now) => {
+  pluckNote(ctx, out, now, 587.3, 0.5)
+  pluckNote(ctx, out, now + 0.13, 880, 0.42)
+}
+
+const SOUNDS = { sheen, whinny, rustle, horn, gate, roar, triumph, eclipse, pluck }
 
 /** Plays a sound by name if sound effects are on. `force` plays it regardless (for the toggle's preview). */
 export const playSound = (name, { force = false } = {}) => {

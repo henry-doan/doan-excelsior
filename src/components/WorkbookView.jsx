@@ -1,7 +1,7 @@
 import { Activity, useEffect, useRef, useState } from 'react'
 import { useSettings, useWords } from '../hooks/useSettings.js'
 import { useWorkbook } from '../hooks/useWorkbook.js'
-import { cellLabel, clamp, normalizeRange, rangeSize } from '../lib/address.js'
+import { cellLabel, clamp, columnLabel, normalizeRange, rangeSize } from '../lib/address.js'
 import { downloadWorkbook, withExtension } from '../lib/fileIO.js'
 import { formatValue } from '../lib/format.js'
 import { closeParens } from '../lib/functions.js'
@@ -13,6 +13,7 @@ import FormulaBar from './FormulaBar.jsx'
 import FunctionPicker from './FunctionPicker.jsx'
 import Grid from './Grid.jsx'
 import SheetTabs from './SheetTabs.jsx'
+import Squire from './Squire.jsx'
 import ShortcutsPanel from './ShortcutsPanel.jsx'
 import StatusBar from './StatusBar.jsx'
 import Toast from './Toast.jsx'
@@ -43,6 +44,8 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
   const [notice, setNotice] = useState(null)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showFunctions, setShowFunctions] = useState(false)
+  // When the workbook was last downloaded, so the squire knows when to remind you.
+  const [sealedAt, setSealedAt] = useState(null)
 
   const sheet = sheetIds.includes(preferredSheet) ? preferredSheet : sheetIds[0]
   const dimensions = store.getDimensions(sheet)
@@ -244,6 +247,86 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
     startEditing(`=${name}(`, 'edit', 'cell')
   }
 
+  // Sorting --------------------------------------------------------------
+
+  const isText = (value) => typeof value === 'string' && value.trim() !== ''
+
+  /**
+   * Whether the first row of a table looks like a header, as Excel guesses:
+   * its filled cells are all text, and either some column has text on top
+   * of a number, date or TRUE/FALSE, or every column is named.
+   */
+  const looksLikeHeader = (top, left, right, bottom) => {
+    if (bottom <= top) return false
+    let filled = 0
+    let namedAboveValue = false
+    for (let col = left; col <= right; col += 1) {
+      const value = store.getValue(sheet, top, col)
+      if (value === null || value === '') continue
+      if (!isText(value) || store.isFormula(sheet, top, col)) return false
+      filled += 1
+      const below = store.getValue(sheet, top + 1, col)
+      if (below !== null && below !== '' && typeof below !== 'string') namedAboveValue = true
+    }
+    return namedAboveValue || (filled > 1 && filled === right - left + 1)
+  }
+
+  /** A last row that totals the rows above (like =SUM(B2:B6)) stays at the bottom. */
+  const isTotalsRow = (row, left, right) => {
+    for (let col = left; col <= right; col += 1) {
+      if (store.isFormula(sheet, row, col) && /[A-Z]+\$?\d+:\$?[A-Z]+\$?\d+/i.test(store.getEditText(sheet, row, col))) {
+        return true
+      }
+    }
+    return false
+  }
+
+  /**
+   * Sorts rows by the active cell's column. A selection of several rows and
+   * columns sorts just those cells. One cell, one row or one column sorts the
+   * whole table so rows stay together. A header row and a totals row stay in place.
+   */
+  const sortBy = (descending) => {
+    finishEditing()
+    const keyCol = selection.col
+    const column = columnLabel(keyCol)
+    const bottom = Math.min(range.bottom, dimensions.height - 1)
+    const right = Math.min(range.right, dimensions.width - 1)
+    const isWholeTable = range.left === range.right || range.top === bottom
+    const area = isWholeTable
+      ? { top: 0, left: 0, bottom: dimensions.height - 1, right: dimensions.width - 1 }
+      : { top: range.top, left: range.left, bottom, right }
+
+    if (area.bottom < area.top || area.right < area.left || keyCol > area.right) {
+      setNotice(words.nothingToSort)
+      return
+    }
+    const hasHeader = looksLikeHeader(area.top, area.left, area.right, area.bottom)
+    const hasTotals = isWholeTable && area.bottom > area.top + 1 && isTotalsRow(area.bottom, area.left, area.right)
+    const rows = { ...area, top: hasHeader ? area.top + 1 : area.top, bottom: hasTotals ? area.bottom - 1 : area.bottom }
+    if (rows.bottom <= rows.top) {
+      setNotice(words.nothingToSort)
+      return
+    }
+
+    let changed = false
+    const sorted = attempt(() => (changed = store.sortRange(sheet, rows, keyCol, descending)))
+    // Back to the grid, so arrow keys and Ctrl+Z work straight after.
+    focusGrid()
+    if (!sorted) return
+    if (!changed) {
+      setNotice(words.alreadySorted(column))
+      return
+    }
+    playSound('rustle')
+    setNotice(
+      words.sorted(`${rows.top + 1}–${rows.bottom + 1}`, column, descending, {
+        header: hasHeader ? area.top + 1 : null,
+        totals: hasTotals ? area.bottom + 1 : null,
+      }),
+    )
+  }
+
   // Clipboard ------------------------------------------------------------
 
   const copy = (cut) => {
@@ -353,10 +436,20 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
 
   // Errors ---------------------------------------------------------------
 
+  /** Selects a cell (an error, or one the squire points at), switching sheets if needed. */
+  const goTo = (target) => {
+    finishEditing()
+    if (target.sheet !== sheet) {
+      playSound('rustle')
+      setPreferredSheet(target.sheet)
+    }
+    setSelection(singleCell(target.row, target.col, true))
+    focusGrid()
+  }
+
   /** Selects the first error after the active cell, wrapping to the first sheet. */
   const jumpToError = (errors) => {
     if (errors.length === 0) return
-    finishEditing()
     const order = store.getSheetIds()
     const position = (cell) => [order.indexOf(cell.sheet), cell.row, cell.col]
     const current = position({ sheet, row: selection.row, col: selection.col })
@@ -365,13 +458,7 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
       const index = next.findIndex((value, i) => value !== current[i])
       return index !== -1 && next[index] > current[index]
     }
-    const target = errors.find(isAfterCurrent) ?? errors[0]
-    if (target.sheet !== sheet) {
-      playSound('rustle')
-      setPreferredSheet(target.sheet)
-    }
-    setSelection(singleCell(target.row, target.col, true))
-    focusGrid()
+    goTo(errors.find(isAfterCurrent) ?? errors[0])
   }
 
   // Files ----------------------------------------------------------------
@@ -387,6 +474,7 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
     const sheets = bookType === 'csv' ? [sheet] : undefined
     if (attempt(() => downloadWorkbook(store, { fileName, bookType, sheetIds: sheets }))) {
       playSound('horn')
+      setSealedAt(Date.now())
       setNotice(
         bookType === 'csv'
           ? words.downloadedSheet(store.getSheetName(sheet), fileName)
@@ -429,6 +517,7 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
         onDeleteRows={deleteRows}
         onInsertColumn={insertColumn}
         onDeleteColumns={deleteColumns}
+        onSort={sortBy}
         onToggleShortcuts={() => setShowShortcuts((visible) => !visible)}
         shortcutsOpen={showShortcuts}
         onTotal={totalSelection}
@@ -460,6 +549,7 @@ const WorkbookView = ({ onOpenFile, isOpening }) => {
           colCount={colCount}
           actions={gridActions}
         />
+        {settings.squire && <Squire sheet={sheet} sealedAt={sealedAt} onGo={goTo} />}
         <Activity mode={showShortcuts ? 'visible' : 'hidden'}>
           <ShortcutsPanel onClose={() => setShowShortcuts(false)} />
         </Activity>

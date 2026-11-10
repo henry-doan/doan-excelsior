@@ -34,6 +34,7 @@ const Toolbar = ({
   onDeleteRows,
   onInsertColumn,
   onDeleteColumns,
+  onSort,
   onToggleShortcuts,
   onTotal,
   onInsertFunction,
@@ -81,11 +82,16 @@ const Toolbar = ({
           <ToolButton icon="redo" label={words.redo} shortcut="Ctrl+Y" disabled={!canRedo} onClick={onRedo} />
         </div>
 
-        <div className="tool-group">
+        <div className="tool-group is-compact">
           <ToolButton icon="rowAdd" label={words.insertRow} onClick={onInsertRow} />
           <ToolButton icon="rowRemove" label={words.deleteRows} onClick={onDeleteRows} />
           <ToolButton icon="colAdd" label={words.insertColumn} onClick={onInsertColumn} />
           <ToolButton icon="colRemove" label={words.deleteColumns} onClick={onDeleteColumns} />
+        </div>
+
+        <div className="tool-group is-compact" role="group" aria-label="Sort">
+          <ToolButton icon="sortAsc" label={words.sortAsc} title={words.sortAscTitle} onClick={() => onSort(false)} />
+          <ToolButton icon="sortDesc" label={words.sortDesc} title={words.sortDescTitle} onClick={() => onSort(true)} />
         </div>
 
         <div className="tool-group">

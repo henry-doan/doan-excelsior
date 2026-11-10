@@ -20,17 +20,18 @@ Built with React 19, the React Compiler, [HyperFormula](https://hyperformula.han
 - **Copy, cut and paste.** Copying inside the app keeps formulas and shifts their references, so `=E2*2` pasted one row down becomes `=E3*2`. Pasting from Excel or Google Sheets works too.
 - **Undo and redo** for everything, including row, column and sheet changes.
 - **Rows and columns**: insert and delete, with formulas updating to match.
+- **Sorting.** Click a cell in the column to sort by and press **Sort A–Z** or **Sort Z–A**. With one cell (or one whole column or row) selected, the whole table is sorted so each row stays together; select several rows and columns to sort only those cells. A header row (text over numbers, or every column named) and a totals row at the bottom (a formula like `=SUM(B2:B6)`) stay where they are. Numbers come before text, text ignores upper and lower case and reads numbers inside it naturally (*Item 2* before *Item 10*), and blanks always go last. Formulas move with their rows and are rewritten for their new place, as in Excel, and the whole sort is one Undo. Below 1500 px wide, the sort, row and column buttons show only their icons.
 - **Resizable columns.** Drag the right edge of a column header to make it wider or narrower, or double-click the edge to fit the column to its contents. Select several whole columns first to resize them all at once. Widths are read from and saved to `.xlsx` files, and can be undone.
 - **Sheets**: add, rename (double-click a tab) and delete.
 - **Status bar** with Sum, Average and Count for the selected cells.
 - **Download** the whole workbook as `.xlsx`, or the current sheet as `.csv`.
 - **Large sheets** stay smooth: the grid only renders the cells on screen.
-- **Three themes**: Light, Dark and Knight, plus Match system. Your choice is remembered.
+- **Four themes**: Light, Dark, Knight and Parchment, plus Match system. Your choice is remembered.
 - **Works on small screens**, and can be installed as an app from the browser.
 
 ## Knight features
 
-Optional touches that make the app feel like a knight's ledger. The two toolbar switches next to the theme buttons turn on the wording and the sounds; both are off by default and remembered between visits.
+Optional touches that make the app feel like a knight's ledger. The three toolbar switches next to the theme buttons turn on the wording, the sounds and the squire; all are off by default and remembered between visits.
 
 | Feature | How to use it |
 | --- | --- |
@@ -39,10 +40,13 @@ Optional touches that make the app feel like a knight's ledger. The two toolbar 
 | **Knightly speech** | Click the **scroll** button. Buttons, menus, the status bar and messages switch to a medieval voice (see the table below). Only the wording changes, never what a button does, and formula error codes like `#DIV/0!` stay as they are. While it's on, new sheets are named *Banner 2*, *Banner 3*… |
 | **Banner sheet tabs** | Always on. Sheet tabs hang like swallowtail pennants in heraldic colors: green, gold, crimson, blue and purple, in turn. The active tab is filled in. |
 | **`=EXCELSIOR()`** | Type it in any cell to get a random knightly motto, such as *“Let no #REF! go unanswered.”* It appears in autocomplete and under **Knightly** in All functions. Excel doesn't know it, so a downloaded file keeps the motto as the cell's saved value, but Excel shows `#NAME?` if it recalculates. |
-| **Sound effects** | Click the **speaker** button; a short sword sound confirms it's on. Then you'll hear a sword being drawn when you save a formula, a horse when a file opens, parchment when you switch sheets, a horn when you download, the portcullis rattling up at the castle gate, a dragon's roar when the error dragon lands and a victory fanfare when you slay it. |
+| **Sound effects** | Click the **speaker** button; a short sword sound confirms it's on. Then you'll hear a sword being drawn when you save a formula, a horse when a file opens, parchment when you switch sheets, a horn when you download, the portcullis rattling up at the castle gate, a dragon's roar when the error dragon lands, a victory fanfare when you slay it and a lute pluck when the squire speaks. |
 | **“Charge!” while opening** | Shows automatically when a file takes a moment to open: a small galloping knight with real progress through reading the file, reading the sheets and calculating formulas. It appears at once for files over 1 MB, and only after a quarter of a second for smaller ones, so quick opens don't flash. |
 | **Error dragon** | Always on. While any cell in the workbook shows an error (`#DIV/0!`, `#REF!`, `#NAME?`…), a dragon perches on the status bar above a count of the errors. It can't be dismissed: click it to jump to the next error, on any sheet, and it flies off once every error is fixed (or undone). With sound on, it roars as it lands and a fanfare plays when it leaves; when an edit or a newly opened file wakes or slays the dragon, only the dragon's sound plays, not the usual sword or horse. It counts up to 10,000 errors. |
-| **Sword cursor** | Always on over the cells, in place of the usual plus. Text boxes, buttons, headers and resize handles keep their normal cursors. The click point is the tip of the blade. |
+| **Sword cursor** | Always on over the cells, in place of the usual plus. The click point is the tip of the blade. |
+| **Gauntlet and lance cursors** | Always on. A steel gauntlet points at anything clickable (buttons, tabs, menus, the dragon) in place of the usual hand. Over a column header a lance aims down the column, and over a row number it aims along the row, since clicking there selects the whole of it. Text boxes and resize handles keep their normal cursors. |
+| **Squire** | Click the **helm** button. A small squire peeks up from the bottom-left corner of the sheet and speaks up now and then: a column with no header, two columns with the same name, a number stored as text, a sheet still called *Sheet1*, the error dragon (and cheering when it's slain), work not downloaded for ten minutes, or late at night. When all is quiet he offers a tip every few minutes. Click his words to go to the cell he means, click him for a tip, or × to hush him. He waits at least 40 seconds between remarks and never repeats one. With sound on, he speaks with a soft lute pluck. |
+| **Parchment theme** | Pick the **quill** in the theme switch: aged, grainy paper with foxed edges, brown ink gridlines, a few old ink blots that scroll with the sheet, Garamond type and hand-lettered column headers. |
 
 **Knightly wording**
 
@@ -52,6 +56,7 @@ Optional touches that make the app feel like a knight's ledger. The two toolbar 
 | Download .xlsx / .csv | Seal as .xlsx / .csv |
 | Undo, Redo | Retreat, Advance |
 | Insert / Delete rows and columns | Raise / Banish rows and columns |
+| Sort A–Z, Sort Z–A | Marshal A–Z, Marshal Z–A |
 | Functions, Shortcuts | Spellbook, Battle keys |
 | Sum, Average, Count | Tribute, Mean, Muster |
 | Add sheet | Raise a banner |
@@ -98,6 +103,7 @@ Pick a theme with the switch at the right of the toolbar.
 | Light        | White sheet with forest-green selection and accents                  |
 | Dark         | Steel-black sheet with mint-green accents                            |
 | Knight       | Forest-green toolbar and footer around a light sheet, like the logo  |
+| Parchment    | Aged paper, brown ink and Garamond type, with a few old ink blots    |
 
 The choice is saved in the browser, and a small script in `index.html` applies it before the page draws so there is no flash of the wrong theme. All colors are CSS variables at the top of `src/styles.css`, one block per theme, and are taken from the logo:
 
@@ -121,6 +127,8 @@ To add another theme, copy the `:root[data-theme='knight']` block, give it a new
 | `public/apple-touch-icon.png` | iPhone and iPad home screen                       |
 | `public/icon-512.png`         | Installed app icon (`manifest.webmanifest`)       |
 | `public/cursor-sword.png`, `cursor-sword@2x.png` | Sword cursor over cells (32 and 64 px, hotspot at the blade tip, top left) |
+| `public/cursor-gauntlet.png`, `cursor-gauntlet@2x.png` | Gauntlet cursor over clickable things (hotspot at the fingertip, 9 1) |
+| `public/cursor-lance.png`, `cursor-lance-right.png` (and `@2x`) | Lance cursors over column and row headers (hotspot at the tip: 16 31 and 31 16) |
 | `src/assets/emblem.png`       | Knight emblem in the toolbar and drop screen      |
 
 In the app, the “DOAN / EXCELSIOR” lettering next to the emblem is set in type (Cinzel) rather than taken from the image, so it can change color with the theme and stay readable in Dark and Knight.
@@ -176,6 +184,7 @@ src/
 │   ├── lexicon.js            Plain and knightly interface wording
 │   ├── settingsStore.js      Remembers knightly speech and sound settings
 │   ├── sounds.js             Synthesized sound effects (Web Audio)
+│   ├── squireRemarks.js      What the squire notices, and his tips
 │   ├── fileIO.js             Reads and writes files with SheetJS
 │   ├── format.js             Turns values and number formats into display text
 │   ├── address.js            A1-style labels and range helpers
@@ -199,6 +208,7 @@ src/
     ├── FunctionPicker.jsx    Searchable dialog of every function
     ├── SheetTabs.jsx         Sheet tabs, add, rename, delete
     ├── ErrorDragon.jsx       The dragon that guards formula errors
+    ├── Squire.jsx            The squire in the corner who remarks on the sheet
     ├── StatusBar.jsx         Sum, Average and Count
     ├── ShortcutsPanel.jsx    Keyboard shortcuts list
     ├── Toast.jsx             Short messages and errors

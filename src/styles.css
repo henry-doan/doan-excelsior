@@ -140,6 +140,57 @@
   --shadow: 0 8px 28px rgb(9 31 27 / 0.22);
 }
 
+:root[data-theme='parchment'] {
+  color-scheme: light;
+  --brand-ink: #3b2412;
+  --brand-green: #7a2418;
+  --paper: #e9dbb8;
+  --sheet: #f3e7c9;
+  --rule: rgb(92 60 26 / 0.2);
+  --rule-strong: rgb(92 60 26 / 0.38);
+  --ink: #2e1d0e;
+  --muted: #6e5435;
+  --header: #e6d4a9;
+  --header-selected: #dcc08a;
+  --chrome: #e2cc98;
+  --chrome-ink: #2e1d0e;
+  --chrome-muted: #6e5435;
+  --chrome-hover: rgb(92 60 26 / 0.1);
+  --chrome-rule: rgb(92 60 26 / 0.28);
+  --chrome-pressed: rgb(122 36 24 / 0.14);
+  --chrome-pressed-ink: #7a2418;
+  --accent: #7a2418;
+  --accent-wash: rgb(122 36 24 / 0.1);
+  --marker: #9c3a22;
+  --steel: #8a7556;
+  --danger: #a3211a;
+  --emblem-glow: sepia(0.35);
+  --shadow: 0 8px 28px rgb(59 36 18 / 0.25);
+  --font-ui: 'EB Garamond', Garamond, 'Times New Roman', Georgia, serif;
+  --font-quill: 'IM Fell English', 'EB Garamond', Georgia, serif;
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.02' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.3  0 0 0 0 0.12  0 0 0 0.5 -0.12'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)'/%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.22  0 0 0 0 0.1  0 0 0 0.35 -0.1'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)'/%3E%3C/svg%3E");
+  --ink-blots: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='760' height='620'%3E%3Cg fill='%233b2412'%3E%3Cg opacity='0.13'%3E%3Cpath d='M600 92c9-6 24-4 29 6 6 10 1 17 9 22 9 5 6 19-4 22-8 3-12 11-22 11-13 1-21-9-29-14-10-7-12-21-4-30 6-7 12-11 21-17z'/%3E%3Ccircle cx='652' cy='88' r='3.5'/%3E%3Ccircle cx='584' cy='140' r='2.5'/%3E%3Ccircle cx='662' cy='131' r='2'/%3E%3Ccircle cx='617' cy='71' r='1.8'/%3E%3C/g%3E%3Cg opacity='0.09'%3E%3Cpath d='M118 455c6-9 21-10 27-2 4 5 11 3 15 9 5 8-2 15-9 18-6 3-7 10-16 10-9 0-16-6-19-13-3-8-4-15 2-22z'/%3E%3Ccircle cx='168' cy='448' r='2.6'/%3E%3Ccircle cx='104' cy='487' r='1.8'/%3E%3C/g%3E%3Cg opacity='0.07'%3E%3Cellipse cx='402' cy='300' rx='5' ry='3.5'/%3E%3Ccircle cx='414' cy='307' r='1.6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  font-size: 15px;
+}
+
+/* Knight cursors, always on: a gauntlet points at anything clickable and a lance
+   aims along row and column headers. Hotspots are the fingertip and the lance tip.
+   Browsers without image-set() for cursors get the 1x images. */
+:root {
+  --cursor-gauntlet: url('/cursor-gauntlet.png') 9 1, pointer;
+  --cursor-lance-down: url('/cursor-lance.png') 16 31, pointer;
+  --cursor-lance-right: url('/cursor-lance-right.png') 31 16, pointer;
+}
+
+@supports (cursor: image-set(url('/cursor-gauntlet.png') 1x) 1 1, auto) {
+  :root {
+    --cursor-gauntlet: image-set(url('/cursor-gauntlet.png') 1x, url('/cursor-gauntlet@2x.png') 2x) 9 1, pointer;
+    --cursor-lance-down: image-set(url('/cursor-lance.png') 1x, url('/cursor-lance@2x.png') 2x) 16 31, pointer;
+    --cursor-lance-right: image-set(url('/cursor-lance-right.png') 1x, url('/cursor-lance-right@2x.png') 2x) 31 16,
+      pointer;
+  }
+}
+
 *,
 *::before,
 *::after {
@@ -336,7 +387,7 @@ input {
   border-radius: 6px;
   background: transparent;
   color: var(--chrome-muted);
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .theme-option:hover {
@@ -359,7 +410,7 @@ input {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
   white-space: nowrap;
 }
 
@@ -383,6 +434,18 @@ input {
 
 .icon {
   flex: none;
+}
+
+/* On laptop widths the row, column and sort buttons drop their words (their
+   tooltips keep them) so the whole toolbar fits without scrolling. */
+@media (max-width: 1500px) {
+  .tool-group.is-compact .tool-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
 }
 
 @media (max-width: 760px) {
@@ -490,7 +553,7 @@ input {
   border: 0;
   border-right: 1px solid var(--rule-strong);
   background: var(--header);
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .column-header,
@@ -502,7 +565,15 @@ input {
   color: var(--muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  cursor: pointer;
+}
+
+/* A lance aims down a column or along a row: the header selects all of it. */
+.column-header {
+  cursor: var(--cursor-lance-down);
+}
+
+.row-header {
+  cursor: var(--cursor-lance-right);
 }
 
 .column-header {
@@ -683,7 +754,7 @@ input {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .icon-button:hover {
@@ -748,7 +819,7 @@ input {
   border: 0;
   border-right: 1px solid var(--chrome-rule);
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .sheet-add:hover {
@@ -791,7 +862,7 @@ input {
   padding: 0 16px;
   border: 0;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
   color: var(--chrome-ink);
 }
 
@@ -820,7 +891,7 @@ input {
   border-radius: 4px;
   background: transparent;
   color: var(--muted);
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .sheet-remove:hover {
@@ -879,7 +950,7 @@ input {
   font: inherit;
   font-weight: 600;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .error-dragon-button:hover {
@@ -1003,7 +1074,7 @@ input {
   border: 0;
   border-radius: 4px;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .toast-dismiss:hover {
@@ -1094,7 +1165,7 @@ input {
   background: transparent;
   color: var(--ink);
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .menu-item:hover,
@@ -1160,7 +1231,7 @@ input {
   gap: 10px;
   padding: 5px 8px;
   border-radius: 5px;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .function-hints [role='option'].is-active {
@@ -1272,7 +1343,7 @@ input {
   gap: 2px 12px;
   padding: 8px 10px;
   border-radius: 6px;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
 }
 
 .picker-list [role='option'].is-active {
@@ -1838,7 +1909,7 @@ input {
   backdrop-filter: blur(4px);
   color: inherit;
   text-align: center;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
   transition: background 150ms, transform 150ms, box-shadow 150ms;
 }
 
@@ -2008,7 +2079,7 @@ input {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-gauntlet);
   transform: translate(calc(var(--tilt-x) * -12px), calc(var(--tilt-y) * -8px));
   transition:
     transform 400ms ease-out,
@@ -2273,5 +2344,229 @@ input {
   .eclipse-fade,
   .eclipse-diamond {
     display: none;
+  }
+}
+
+/* Parchment theme ----------------------------------------------------------- */
+
+/* Aged paper with a faint grain, brown iron-gall ink and a few old ink blots
+   that scroll with the sheet, as if spilled on it. Colors are tokens at the top. */
+:root[data-theme='parchment'] .toolbar,
+:root[data-theme='parchment'] .formula-bar,
+:root[data-theme='parchment'] .workbook-footer {
+  background-image: var(--paper-grain);
+}
+
+:root[data-theme='parchment'] .toolbar {
+  border-bottom-color: rgb(92 60 26 / 0.45);
+  box-shadow: inset 0 -3px 6px -4px rgb(92 60 26 / 0.45);
+}
+
+:root[data-theme='parchment'] .grid-scroller {
+  background: var(--paper-grain), var(--sheet);
+  /* Darkened, foxed edges, like a page handled for years. */
+  box-shadow: inset 0 0 70px rgb(140 92 36 / 0.28);
+}
+
+:root[data-theme='parchment'] .grid-sizer {
+  background-image: var(--ink-blots);
+}
+
+:root[data-theme='parchment'] .column-headers,
+:root[data-theme='parchment'] .row-headers,
+:root[data-theme='parchment'] .corner {
+  background-image: var(--paper-grain);
+}
+
+/* Column letters and the squire's words are lettered by hand. The quill font
+   only has old-style figures, so anything with numbers stays in Garamond. */
+:root[data-theme='parchment'] .column-header,
+:root[data-theme='parchment'] .squire-say {
+  font-family: var(--font-quill);
+}
+
+/* Garamond's old-style figures wander; keep numbers lined up. */
+:root[data-theme='parchment'] .cell,
+:root[data-theme='parchment'] .row-header,
+:root[data-theme='parchment'] .sheet-tab-button,
+:root[data-theme='parchment'] .status-bar,
+:root[data-theme='parchment'] .error-dragon-count {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Squire --------------------------------------------------------------------- */
+
+/* Peeks up from the bottom-left corner of the sheet, above the scroll bar,
+   with a speech bubble to his right. Only he and his bubble take clicks. */
+.squire {
+  position: absolute;
+  left: 6px;
+  bottom: 14px;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.squire-button {
+  order: -1;
+  flex: none;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: var(--cursor-gauntlet);
+  animation: squire-rise 600ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.25));
+  transition: transform 160ms ease-out;
+}
+
+.squire-button:hover {
+  transform: translateY(-3px) rotate(-2deg);
+}
+
+.squire-button:focus-visible {
+  outline-offset: 0;
+  border-radius: 12px;
+}
+
+.squire-art {
+  display: block;
+}
+
+.squire-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: squire-blink 4.5s infinite;
+}
+
+.squire-mouth {
+  display: none;
+}
+
+.squire.is-speaking .squire-mouth {
+  display: inline;
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: squire-talk 220ms 8 alternate ease-in-out;
+}
+
+.squire.is-speaking .squire-smile {
+  display: none;
+}
+
+.squire-bubble {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  max-width: min(320px, calc(100vw - 110px));
+  margin-bottom: 30px;
+  padding: 2px 2px 2px 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 12px;
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+  animation: squire-bubble-in 220ms 120ms ease-out both;
+}
+
+/* The bubble's tail, pointing back at the squire. */
+.squire-bubble::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  bottom: 12px;
+  width: 12px;
+  height: 12px;
+  border-left: 1px solid var(--rule-strong);
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--sheet);
+  transform: rotate(45deg);
+}
+
+.squire-say {
+  position: relative;
+  padding: 8px 4px 8px 12px;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: var(--cursor-gauntlet);
+}
+
+.squire-hush {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 4px 4px 0 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: var(--cursor-gauntlet);
+}
+
+.squire-hush:hover {
+  background: var(--accent-wash);
+  color: var(--ink);
+}
+
+@keyframes squire-rise {
+  from {
+    transform: translateY(60px);
+    opacity: 0;
+  }
+}
+
+@keyframes squire-bubble-in {
+  from {
+    transform: translateX(-6px) scale(0.92);
+    opacity: 0;
+  }
+}
+
+@keyframes squire-blink {
+  0%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  97% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes squire-talk {
+  from {
+    transform: scaleY(0.35);
+  }
+}
+
+@media (max-width: 640px) {
+  .squire-art {
+    width: 48px;
+    height: 50px;
+  }
+
+  .squire-bubble {
+    margin-bottom: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .squire-button,
+  .squire-bubble,
+  .squire-eyes,
+  .squire.is-speaking .squire-mouth {
+    animation: none;
   }
 }

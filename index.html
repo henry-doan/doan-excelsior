@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Public+Sans:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=EB+Garamond:wght@400;600&family=IM+Fell+English&family=Public+Sans:wght@400;600&display=swap"
     />
     <title>Doan Excelsior</title>
     <!-- Apply the saved theme before first paint so there is no flash. -->
@@ -23,7 +23,7 @@
       (() => {
         try {
           const theme = localStorage.getItem('doan-excelsior-theme')
-          if (['light', 'dark', 'knight'].includes(theme)) document.documentElement.dataset.theme = theme
+          if (['light', 'dark', 'knight', 'parchment'].includes(theme)) document.documentElement.dataset.theme = theme
         } catch {}
       })()
     </script>

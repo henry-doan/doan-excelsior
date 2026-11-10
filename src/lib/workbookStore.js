@@ -45,6 +45,29 @@ const shiftFormats = (formats, axis, index, delta) => {
   return next
 }
 
+// Sorting order, as in Excel: numbers, then text, then TRUE/FALSE, then errors; blanks always last.
+const sortRank = (value) => {
+  if (value === null || value === undefined || value === '') return 4
+  if (typeof value === 'number') return 0
+  if (typeof value === 'string') return 1
+  if (typeof value === 'boolean') return 2
+  return 3
+}
+
+const compareText = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
+
+/** Compares two cell values for an ascending sort; `descending` flips everything but the blanks. */
+const compareValues = (a, b, descending) => {
+  const rankA = sortRank(a)
+  const rankB = sortRank(b)
+  if (rankA === 4 || rankB === 4) return rankA - rankB
+  const direction = descending ? -1 : 1
+  if (rankA !== rankB) return (rankA - rankB) * direction
+  if (rankA === 0 || rankA === 2) return (Number(a) - Number(b)) * direction
+  if (rankA === 1) return compareText(a, b) * direction
+  return 0
+}
+
 /**
  * The workbook store owns the HyperFormula engine and exposes a tiny
  * subscribe/getSnapshot API so React can read it with useSyncExternalStore.
@@ -208,6 +231,46 @@ export const createWorkbookStore = () => {
   })
 
   /** Copies inside the engine so pasted formulas shift their references. */
+  /**
+   * Sorts the rows of a range by one of its columns, like Excel's Sort A to Z.
+   * Rows move as a whole within the range: formulas are rewritten for their
+   * new row (so =B2*2 moving to row 5 becomes =B5*2, while $B$2 stays put)
+   * and number formats travel with their cells. It's one step to undo.
+   * Returns false when the rows were already in order.
+   */
+  const sortRange = (sheet, { top, left, bottom, right }, keyCol, descending = false) => {
+    const order = Array.from({ length: bottom - top + 1 }, (_, i) => top + i)
+    const keys = new Map(order.map((row) => [row, engine.getCellValue({ sheet, row, col: keyCol })]))
+    order.sort((a, b) => compareValues(keys.get(a), keys.get(b), descending) || a - b)
+    if (order.every((row, i) => row === top + i)) return false
+
+    const rowRange = (row) => ({ start: { sheet, row, col: left }, end: { sheet, row, col: right } })
+    const current = engine.getRangeSerialized({ start: { sheet, row: top, col: left }, end: { sheet, row: bottom, col: right } })
+    const hasFormula = (cells) => cells.some((cell) => typeof cell === 'string' && cell.startsWith('='))
+    const matrix = order.map((source, i) => {
+      const target = top + i
+      const cells = current[source - top]
+      // Only rows with formulas need their references rewritten for the new row.
+      return source !== target && hasFormula(cells) ? engine.getFillRangeData(rowRange(source), rowRange(target))[0] : cells
+    })
+
+    const previous = sheetFormats(sheet)
+    const nextSheetFormats = new Map()
+    for (const [key, value] of previous) {
+      const [row, col] = key.split(':').map(Number)
+      if (row < top || row > bottom || col < left || col > right) nextSheetFormats.set(key, value)
+    }
+    order.forEach((source, i) => {
+      for (let col = left; col <= right; col += 1) {
+        const format = previous.get(formatKey(source, col))
+        if (format) nextSheetFormats.set(formatKey(top + i, col), format)
+      }
+    })
+
+    mutate(() => engine.setCellContents({ sheet, row: top, col: left }, matrix), withSheetFormats(sheet, nextSheetFormats))
+    return true
+  }
+
   const copyRange = (sheet, range) => engine.copy(toEngineRange(sheet, range))
 
   const cutRange = (sheet, range) => engine.cut(toEngineRange(sheet, range))
@@ -332,6 +395,7 @@ export const createWorkbookStore = () => {
     setCell,
     setMatrix,
     clearRange,
+    sortRange,
     copyRange,
     cutRange,
     pasteAt,

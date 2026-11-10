@@ -9,6 +9,7 @@ export const THEMES = [
   { id: 'light', label: 'Light', icon: 'sun' },
   { id: 'dark', label: 'Dark', icon: 'moon' },
   { id: 'knight', label: 'Knight', icon: 'shield' },
+  { id: 'parchment', label: 'Parchment', icon: 'quill' },
 ]
 
 /** Browser UI colors (address bar on mobile) for each theme. */
@@ -16,6 +17,7 @@ export const THEME_COLORS = {
   light: '#f4f6f3',
   dark: '#121615',
   knight: '#0b3f27',
+  parchment: '#e2cc98',
 }
 
 const STORAGE_KEY = 'doan-excelsior-theme'
