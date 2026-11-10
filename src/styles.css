@@ -1988,11 +1988,290 @@ input {
   }
 
   .gate-sky,
+  .gate-moon,
   .gate-stage,
   .gate-inside,
   .gate-door,
   .gate-portcullis {
     transition: none !important;
     transform: none !important;
+  }
+}
+
+/* The moon easter egg ------------------------------------------------------- */
+
+/* An invisible circle over the painted moon; it drifts with the sky. */
+.gate-moon {
+  position: fixed;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transform: translate(calc(var(--tilt-x) * -12px), calc(var(--tilt-y) * -8px));
+  transition:
+    transform 400ms ease-out,
+    box-shadow 600ms ease,
+    background-color 600ms ease;
+}
+
+.gate-moon:hover {
+  background-color: rgb(235 255 240 / 0.1);
+  box-shadow:
+    0 0 36px 10px rgb(190 255 210 / 0.3),
+    0 0 90px 30px rgb(120 230 160 / 0.15);
+}
+
+/*
+ * The eclipse, in order (ms): the moon flies to the middle (0–900), Earth's
+ * shadow turns it blood red (900–2100), a black disc slides across it
+ * (2100–3200), the diamond ring flashes (3000–3500), the corona flares
+ * (3100–4000), the words appear (3300), and it fades out (4900–5400).
+ */
+.eclipse {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  cursor: progress;
+}
+
+.eclipse-backdrop,
+.eclipse-fade {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.eclipse-backdrop {
+  background: radial-gradient(circle at 50% 44%, #04100b, #010203 70%);
+  animation: eclipse-show 900ms ease forwards;
+}
+
+.eclipse-fade {
+  z-index: 3;
+  background: #000;
+  animation: eclipse-show 500ms ease-in 4900ms forwards;
+}
+
+.eclipse-orb {
+  position: absolute;
+  left: var(--orb-left);
+  top: var(--orb-top);
+  width: var(--orb-size);
+  height: var(--orb-size);
+  animation: eclipse-orb-fly 900ms cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+
+.eclipse-orb > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.eclipse-moon {
+  overflow: hidden;
+  box-shadow:
+    0 0 calc(var(--orb-size) * 0.12) rgb(190 255 210 / 0.55),
+    0 0 calc(var(--orb-size) * 0.4) rgb(90 220 140 / 0.25);
+  animation:
+    eclipse-moon-glow 1200ms ease-in 900ms forwards,
+    eclipse-moon-dim 500ms ease-in 3000ms forwards;
+}
+
+.eclipse-moon > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The sky's own moon at first, so the flight starts seamlessly, then the close-up. */
+.eclipse-moon-full {
+  opacity: 0;
+  animation: eclipse-show 700ms ease-in 200ms forwards;
+}
+
+/* Earth's shadow: the blood moon, revealed by a large soft-edged circle sweeping in from the left. */
+.eclipse-moon-blood {
+  mask-image: radial-gradient(circle closest-side, #000 78%, rgb(0 0 0 / 0.6) 88%, transparent);
+  mask-size: 180% 180%;
+  mask-repeat: no-repeat;
+  mask-position: calc(var(--orb-size) * -2.4) calc(var(--orb-size) * -0.4);
+  animation: eclipse-umbra-sweep 1200ms cubic-bezier(0.4, 0, 0.3, 1) 900ms forwards;
+}
+
+.eclipse-disc {
+  background: radial-gradient(circle at 40% 38%, #0b0d0e, #000 70%);
+  opacity: 0;
+  transform: translate(105%, -18%);
+  animation: eclipse-disc-slide 1100ms cubic-bezier(0.3, 0, 0.25, 1) 2100ms forwards;
+}
+
+/* The corona art: its black disc is sized to the moon, its streamers reach far beyond. */
+.eclipse-orb > .eclipse-corona {
+  inset: -85%;
+  width: 270%;
+  height: 270%;
+  border-radius: 0;
+  mask-image: radial-gradient(circle closest-side, #000 45%, rgb(0 0 0 / 0.5) 70%, transparent);
+  opacity: 0;
+  animation:
+    eclipse-corona-flare 900ms ease-out 3100ms forwards,
+    eclipse-corona-turn 40s linear 3100ms infinite;
+}
+
+/* The "diamond ring": the last bright flash just before totality. Its ring is the moon's edge. */
+.eclipse-orb > .eclipse-diamond {
+  inset: -25%;
+  width: 150%;
+  height: 150%;
+  opacity: 0;
+  animation: eclipse-diamond-flash 500ms ease-out 3000ms forwards;
+}
+
+.eclipse-text {
+  position: absolute;
+  top: var(--text-top);
+  left: 16px;
+  right: 16px;
+  margin: 0;
+  color: rgb(243 247 244 / 0.85);
+  font-family: var(--font-brand);
+  font-size: clamp(18px, 3.2vw, 28px);
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-shadow:
+    0 1px 3px rgb(0 0 0 / 0.95),
+    0 0 14px rgb(0 0 0 / 0.8);
+  opacity: 0;
+  animation: eclipse-text-in 900ms ease-out 3300ms forwards;
+}
+
+.eclipse-text strong {
+  color: #f3f7f4;
+  font-weight: 700;
+}
+
+.eclipse-dots {
+  display: inline-block;
+  animation: eclipse-dots 1.2s ease-in-out 3300ms infinite;
+}
+
+@keyframes eclipse-show {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes eclipse-orb-fly {
+  from {
+    transform: translate(var(--orb-from-x), var(--orb-from-y)) scale(var(--orb-from-scale));
+  }
+}
+
+@keyframes eclipse-moon-glow {
+  to {
+    box-shadow:
+      0 0 calc(var(--orb-size) * 0.1) rgb(200 60 30 / 0.5),
+      0 0 calc(var(--orb-size) * 0.35) rgb(140 30 15 / 0.3);
+  }
+}
+
+@keyframes eclipse-moon-dim {
+  to {
+    box-shadow: none;
+  }
+}
+
+@keyframes eclipse-umbra-sweep {
+  to {
+    mask-position: calc(var(--orb-size) * -0.4) calc(var(--orb-size) * -0.4);
+  }
+}
+
+@keyframes eclipse-disc-slide {
+  25% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1.015);
+  }
+}
+
+@keyframes eclipse-diamond-flash {
+  35% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes eclipse-corona-flare {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes eclipse-corona-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes eclipse-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes eclipse-dots {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Without motion: show the corona and the words at once, then leave. */
+@media (prefers-reduced-motion: reduce) {
+  .gate-moon {
+    transition: none;
+  }
+
+  .eclipse *,
+  .eclipse-orb > * {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .eclipse-fade,
+  .eclipse-diamond {
+    display: none;
   }
 }

@@ -11,10 +11,11 @@ import { getSettings } from './settingsStore.js'
  * - gate:    a portcullis rattling up, when entering the castle
  * - roar:    a dragon's growl, when the error dragon lands
  * - triumph: a rising fanfare, when the last error is fixed and the dragon flies off
+ * - eclipse: a low, eerie swell and a shimmer at totality, when the moon is clicked
  */
 
 // Per-sound loudness, tuned by measuring each one so they all peak around 60–70% of full scale.
-const SOUND_LEVELS = { sheen: 1.2, whinny: 1.9, rustle: 3.2, horn: 0.7, gate: 1, roar: 0.5, triumph: 0.7 }
+const SOUND_LEVELS = { sheen: 1.2, whinny: 1.9, rustle: 3.2, horn: 0.7, gate: 1, roar: 0.5, triumph: 0.7, eclipse: 0.25 }
 
 let context = null
 let noiseBuffer = null
@@ -339,7 +340,69 @@ const triumph = (ctx, out, now) => {
   noiseSource(ctx, now + 0.4, 0.8).connect(shimmer).connect(envelope(ctx, out, now + 0.4, 0.01, 0.15, 0.7))
 }
 
-const SOUNDS = { sheen, whinny, rustle, horn, gate, roar, triumph }
+const eclipse = (ctx, out, now) => {
+  const totality = now + 3.1
+  const end = now + 5.3
+  // A deep drone that opens up as the shadow crosses the moon...
+  const drone = ctx.createBiquadFilter()
+  drone.type = 'lowpass'
+  drone.Q.value = 4
+  drone.frequency.setValueAtTime(110, now)
+  drone.frequency.exponentialRampToValueAtTime(700, totality)
+  drone.frequency.exponentialRampToValueAtTime(160, end)
+  const swell = ctx.createGain()
+  swell.gain.setValueAtTime(0.0001, now)
+  swell.gain.linearRampToValueAtTime(0.3, now + 0.9)
+  swell.gain.exponentialRampToValueAtTime(1, totality)
+  swell.gain.setValueAtTime(1, totality + 0.3)
+  swell.gain.exponentialRampToValueAtTime(0.0001, end)
+  drone.connect(swell).connect(out)
+  for (const [type, frequency, detune, level] of [
+    ['sawtooth', 55, -7, 0.35],
+    ['sawtooth', 55, 7, 0.35],
+    ['sine', 82.5, 0, 0.6],
+    ['sine', 41.2, 0, 0.7],
+  ]) {
+    const tone = ctx.createOscillator()
+    tone.type = type
+    tone.frequency.value = frequency
+    tone.detune.value = detune
+    const gain = ctx.createGain()
+    gain.gain.value = level
+    tone.connect(gain).connect(drone)
+    tone.start(now)
+    tone.stop(end + 0.1)
+  }
+  // ...with a cold wind rising underneath...
+  const wind = ctx.createBiquadFilter()
+  wind.type = 'bandpass'
+  wind.Q.value = 1.5
+  wind.frequency.setValueAtTime(300, now)
+  wind.frequency.exponentialRampToValueAtTime(1100, totality)
+  wind.frequency.exponentialRampToValueAtTime(400, end)
+  for (let i = 0; i < 6; i += 1) {
+    noiseSource(ctx, now + i * 0.9, 1).connect(wind)
+  }
+  const windLevel = ctx.createGain()
+  windLevel.gain.setValueAtTime(0.0001, now)
+  windLevel.gain.linearRampToValueAtTime(0.15, now + 0.9)
+  windLevel.gain.exponentialRampToValueAtTime(0.5, totality)
+  windLevel.gain.exponentialRampToValueAtTime(0.0001, end)
+  wind.connect(windLevel).connect(out)
+  // ...and a glassy chord that rings out as the corona appears.
+  for (const [frequency, level] of [[440, 0.3], [659.3, 0.22], [880, 0.18], [1318.5, 0.1], [1760, 0.07]]) {
+    for (const detune of [-6, 6]) {
+      const bell = ctx.createOscillator()
+      bell.frequency.value = frequency
+      bell.detune.value = detune
+      bell.connect(envelope(ctx, out, totality, 0.04, level, 2.1))
+      bell.start(totality)
+      bell.stop(end)
+    }
+  }
+}
+
+const SOUNDS = { sheen, whinny, rustle, horn, gate, roar, triumph, eclipse }
 
 /** Plays a sound by name if sound effects are on. `force` plays it regardless (for the toggle's preview). */
 export const playSound = (name, { force = false } = {}) => {

@@ -11,6 +11,7 @@ import torchUrl from '../assets/gate/torch.webp'
 import { ACCEPTED_FILE_TYPES } from '../lib/fileIO.js'
 import { playSound } from '../lib/sounds.js'
 import Brand from './Brand.jsx'
+import MoonEclipse, { getMoonOnScreen } from './MoonEclipse.jsx'
 
 // How long the portcullis and doors take to open before moving on.
 const OPEN_DURATION = 1800
@@ -96,10 +97,27 @@ const CastleGate = ({ onEnter }) => {
   const gateRef = useRef(null)
   const enterRef = useRef(null)
   const timer = useRef(null)
+  // The moon is painted into the sky, so an invisible button sits over it.
+  const [moon, setMoon] = useState(getMoonOnScreen)
+  const [eclipse, setEclipse] = useState(null)
 
   useEffect(() => {
     enterRef.current?.focus()
     return () => clearTimeout(timer.current)
+  }, [])
+
+  useEffect(() => {
+    const handleResize = () => setMoon(getMoonOnScreen())
+    // Coming Back from Doan Dome can restore this page as it was left, mid-eclipse.
+    const handlePageShow = (event) => {
+      if (event.persisted) setEclipse(null)
+    }
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('pageshow', handlePageShow)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('pageshow', handlePageShow)
+    }
   }, [])
 
   const enter = (file = null) => {
@@ -162,6 +180,21 @@ const CastleGate = ({ onEnter }) => {
         </div>
         <p className="gate-drop-hint">or drop a file on the gate</p>
       </div>
+      {moon.visible && !opening && (
+        <button
+          type="button"
+          className="gate-moon"
+          tabIndex={-1}
+          aria-label="The moon"
+          style={{ left: moon.x - moon.r, top: moon.y - moon.r, width: moon.r * 2, height: moon.r * 2 }}
+          onClick={(event) => {
+            // Measured with the parallax drift, so the eclipse starts exactly where the moon is.
+            const box = event.currentTarget.getBoundingClientRect()
+            setEclipse({ x: box.left + box.width / 2, y: box.top + box.height / 2, r: box.width / 2 })
+          }}
+        />
+      )}
+      {eclipse && <MoonEclipse from={eclipse} />}
     </main>
   )
 }
